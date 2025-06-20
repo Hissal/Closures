@@ -13,6 +13,9 @@ public delegate void ActionWithRefContext<TContext, in TArg>(ref TContext contex
 
 /// <summary> Represents a delegate that returns a result and operates on a value by reference. </summary>
 public delegate TResult RefFunc<TArg, out TResult>(ref TArg value);
+public delegate TResult RefFunc<TArg1, TArg2, out TResult>(ref TArg1 value1, ref TArg2 value2);
 
 /// <summary> Represents a delegate that returns a result and operates on a value by reference with a context. </summary>
-public delegate TResult RefFuncWithContext<in TContext, TArg, out TResult>(TContext context, ref TArg value);
+public delegate TResult RefFuncWithNormalContext<in TContext, TArg, out TResult>(TContext context, ref TArg value);
+
+public delegate TResult FuncWithRefContext<TContext, in TArg, out TResult>(ref TContext context, TArg value);
