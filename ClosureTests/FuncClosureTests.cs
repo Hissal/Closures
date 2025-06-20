@@ -30,6 +30,23 @@ namespace ClosureTests {
                 Assert.That(closure.Context, Is.EqualTo(15)); // Closure's context modified
             });
         }
+        
+        [Test]
+        public void FuncClosure_InvokeSeparate_ReturnsExpectedResults() {
+            int context = 3;
+            var closure = Closure.CreateFunc(context, ctx => ctx + 2);
+            closure.AddFunc(ctx => ctx + 3); // Adding another function to the closure
+            closure.AddFunc(ctx => ctx + 4); // Adding a third function to the closure
+
+            var results = closure.InvokeSeparate().ToArray();
+            
+            Assert.Multiple(() => {
+                Assert.That(results, Has.Length.EqualTo(3)); // Three functions should be invoked
+                Assert.That(results[0], Is.EqualTo(5)); // First function result
+                Assert.That(results[1], Is.EqualTo(6)); // Second function result
+                Assert.That(results[2], Is.EqualTo(7)); // Third function result
+            });
+        }
 
         [Test]
         public void FuncClosure_WithArg_Invoke_ReturnsExpectedResult() {

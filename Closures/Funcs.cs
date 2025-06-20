@@ -87,6 +87,34 @@ public struct FuncClosure<TContext, TResult> {
                 throw new ArgumentOutOfRangeException();
         }
     }
+    
+    /// <summary>
+    /// Invokes the function(s) with the stored context and returns the results separately.
+    /// </summary>
+    /// <returns> IEnumerable of the results </returns>
+    public IEnumerable<TResult> InvokeSeparate() {
+        var invocationList = ContextType switch {
+            ClosureContextType.Normal => NormalFunc?.GetInvocationList() ?? Array.Empty<Delegate>(),
+            ClosureContextType.Ref => RefFunc?.GetInvocationList() ?? Array.Empty<Delegate>(),
+            _ => throw new ArgumentOutOfRangeException(nameof(ContextType), "Invalid closure context type.")
+        };
+        
+        foreach (var func in invocationList) {
+            switch (func) {
+                case Func<TContext, TResult> normalFunc:
+                    yield return normalFunc(Context);
+                    break;
+                case RefFunc<TContext, TResult> refFunc: {
+                    var ctx = Context;
+                    yield return refFunc(ref ctx);
+                    Context = ctx;
+                    break;
+                }
+                default:
+                    throw new InvalidOperationException("Unknown function type in invocation list.");
+            }
+        }
+    }
 
     /// <summary>
     /// Creates a new <see cref="FuncClosure{TContext, TResult}"/> with normal context.
@@ -186,6 +214,34 @@ public struct FuncClosure<TContext, TArg, TResult> {
                 throw new ArgumentOutOfRangeException();
         }
     }
+    
+    /// <summary>
+    /// Invokes the function(s) with the stored context and returns the results separately.
+    /// </summary>
+    /// <returns> IEnumerable of the results </returns>
+    public IEnumerable<TResult> InvokeSeparate(TArg arg) {
+        var invocationList = ContextType switch {
+            ClosureContextType.Normal => NormalFunc?.GetInvocationList() ?? Array.Empty<Delegate>(),
+            ClosureContextType.Ref => RefFunc?.GetInvocationList() ?? Array.Empty<Delegate>(),
+            _ => throw new ArgumentOutOfRangeException(nameof(ContextType), "Invalid closure context type.")
+        };
+        
+        foreach (var func in invocationList) {
+            switch (func) {
+                case Func<TContext, TArg, TResult> normalFunc:
+                    yield return normalFunc(Context, arg);
+                    break;
+                case FuncWithRefContext<TContext, TArg, TResult> refFunc: {
+                    var ctx = Context;
+                    yield return refFunc(ref ctx, arg);
+                    Context = ctx;
+                    break;
+                }
+                default:
+                    throw new InvalidOperationException("Unknown function type in invocation list.");
+            }
+        }
+    }
 
     /// <summary>
     /// Creates a new <see cref="FuncClosure{TContext, TArg, TResult}"/> with normal context.
@@ -283,6 +339,34 @@ public struct RefFuncClosure<TContext, TArg, TResult> {
                 return returnValue;
             default:
                 throw new ArgumentOutOfRangeException();
+        }
+    }
+    
+    /// <summary>
+    /// Invokes the function(s) with the stored context and returns the results separately.
+    /// </summary>
+    /// <returns> IEnumerable of the results </returns>
+    public IEnumerable<TResult> InvokeSeparate(TArg arg) {
+        var invocationList = ContextType switch {
+            ClosureContextType.Normal => NormalFunc?.GetInvocationList() ?? Array.Empty<Delegate>(),
+            ClosureContextType.Ref => RefFunc?.GetInvocationList() ?? Array.Empty<Delegate>(),
+            _ => throw new ArgumentOutOfRangeException(nameof(ContextType), "Invalid closure context type.")
+        };
+        
+        foreach (var func in invocationList) {
+            switch (func) {
+                case RefFuncWithNormalContext<TContext, TArg, TResult> normalFunc:
+                    yield return normalFunc(Context, ref arg);
+                    break;
+                case RefFunc<TContext, TArg, TResult> refFunc: {
+                    var ctx = Context;
+                    yield return refFunc(ref ctx, ref arg);
+                    Context = ctx;
+                    break;
+                }
+                default:
+                    throw new InvalidOperationException("Unknown function type in invocation list.");
+            }
         }
     }
     
