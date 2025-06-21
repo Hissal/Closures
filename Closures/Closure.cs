@@ -5,11 +5,6 @@ public enum ClosureContextType {
     Ref
 }
 
-public enum RefContextBehaviour {
-    UpdateStoredContext,
-    KeepStoredContext
-}
-
 /// <summary>
 /// Provides factory methods for creating closure structs that encapsulate context and delegate logic.
 /// </summary>
