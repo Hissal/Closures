@@ -52,25 +52,25 @@ public static partial class Closure {
 public static partial class Closure {
     /// <summary> Creates a <see cref="FuncClosure{TContext, TResult}"/> with the specified context and function. </summary>
     public static FuncClosure<TContext, TResult> CreateFunc<TContext, TResult>(TContext context, Func<TContext, TResult> func) =>
-        FuncClosure<TContext, TResult>.Create(context, func);
+        new FuncClosure<TContext, TResult>(context, func);
 
     /// <summary> Creates a <see cref="FuncClosure{TContext, TResult}"/> with the specified ref context and function. </summary>
-    public static FuncClosure<TContext, TResult> CreateFunc<TContext, TResult>(TContext context, RefFunc<TContext, TResult> func) =>
-        FuncClosure<TContext, TResult>.Create(context, func);
+    public static FuncClosureRef<TContext, TResult> CreateFunc<TContext, TResult>(TContext context, RefFunc<TContext, TResult> func) =>
+        new FuncClosureRef<TContext, TResult>(context, func);
     
     /// <summary> Creates a <see cref="FuncClosure{TContext, TArg, TResult}"/> with the specified context and function. </summary>
     public static FuncClosure<TContext, TArg, TResult> CreateFunc<TContext, TArg, TResult>(TContext context, Func<TContext, TArg, TResult> func) =>
-        FuncClosure<TContext, TArg, TResult>.Create(context, func);
+        new FuncClosure<TContext, TArg, TResult>(context, func);
     
     /// <summary> Creates a <see cref="FuncClosure{TContext, TArg, TResult}"/> with the specified ref context and function. </summary>
-    public static FuncClosure<TContext, TArg, TResult> CreateFunc<TContext, TArg, TResult>(TContext context, FuncWithRefContext<TContext, TArg, TResult> func) =>
-        FuncClosure<TContext, TArg, TResult>.Create(context, func);
+    public static FuncClosureRef<TContext, TArg, TResult> CreateFunc<TContext, TArg, TResult>(TContext context, FuncWithRefContext<TContext, TArg, TResult> func) =>
+        new FuncClosureRef<TContext, TArg, TResult>(context, func);
 
     /// <summary> Creates a <see cref="RefFuncClosure{TContext, TArg, TResult}"/> with the specified context and function. </summary>
     public static RefFuncClosure<TContext, TArg, TResult> CreateRefFunc<TContext, TArg, TResult>(TContext context, RefFuncWithNormalContext<TContext, TArg, TResult> func) =>
-        RefFuncClosure<TContext, TArg, TResult>.Create(context, func);
+        new RefFuncClosure<TContext, TArg, TResult>(context, func);
     
     /// <summary> Creates a <see cref="RefFuncClosure{TContext, TArg, TResult}"/> with the specified ref context and function. </summary>
-    public static RefFuncClosure<TContext, TArg, TResult> CreateRefFunc<TContext, TArg, TResult>(TContext context, RefFunc<TContext, TArg, TResult> func) =>
-        RefFuncClosure<TContext, TArg, TResult>.Create(context, func);
+    public static RefFuncClosureRef<TContext, TArg, TResult> CreateRefFunc<TContext, TArg, TResult>(TContext context, RefFunc<TContext, TArg, TResult> func) =>
+        new RefFuncClosureRef<TContext, TArg, TResult>(context, func);
 }
