@@ -19,24 +19,24 @@ public static partial class Closure {
         new ActionClosure<TContext>(context, action);
 
     /// <summary> Creates an <see cref="ActionClosureRef{TContext}"/> with the specified context and action. </summary>
-    public static ActionClosureRef<TContext> CreateAction<TContext>(TContext context, RefAction<TContext> action, RefContextBehaviour refContextBehaviour = RefContextBehaviour.UpdateStoredContext) =>
-        new ActionClosureRef<TContext>(context, action, refContextBehaviour);
+    public static ActionClosureRef<TContext> CreateAction<TContext>(TContext context, RefAction<TContext> action) =>
+        new ActionClosureRef<TContext>(context, action);
     
     /// <summary> Creates an <see cref="ActionClosure{TContext, TArg}"/> with the specified context and action. </summary>
     public static ActionClosure<TContext, TArg> CreateAction<TContext, TArg>(TContext context, Action<TContext, TArg> action) =>
         new ActionClosure<TContext, TArg>(context, action);
     
     /// <summary> Creates an <see cref="ActionClosureRef{TContext, TArg}"/> with the specified context and action. </summary>
-    public static ActionClosureRef<TContext, TArg> CreateAction<TContext, TArg>(TContext context, ActionWithRefContext<TContext, TArg> action, RefContextBehaviour refContextBehaviour = RefContextBehaviour.UpdateStoredContext) =>
-        new ActionClosureRef<TContext, TArg>(context, action, refContextBehaviour);
+    public static ActionClosureRef<TContext, TArg> CreateAction<TContext, TArg>(TContext context, ActionWithRefContext<TContext, TArg> action) =>
+        new ActionClosureRef<TContext, TArg>(context, action);
     
     /// <summary> Creates a <see cref="RefActionClosure{TContext, TArg}"/> with the specified context and action. </summary>
     public static RefActionClosure<TContext, TArg> CreateAction<TContext, TArg>(TContext context, RefActionWithNormalContext<TContext, TArg> action) =>
         new RefActionClosure<TContext, TArg>(context, action);
     
     /// <summary> Creates a <see cref="RefActionClosureRef{TContext, TArg}"/> with the specified context and action. </summary>
-    public static RefActionClosureRef<TContext, TArg> CreateAction<TContext, TArg>(TContext context, RefAction<TContext, TArg> action, RefContextBehaviour refContextBehaviour = RefContextBehaviour.UpdateStoredContext) =>
-        new RefActionClosureRef<TContext, TArg>(context, action, refContextBehaviour);
+    public static RefActionClosureRef<TContext, TArg> CreateAction<TContext, TArg>(TContext context, RefAction<TContext, TArg> action) =>
+        new RefActionClosureRef<TContext, TArg>(context, action);
     
     /// <summary> Creates a <see cref="PassedRefActionClosure{TContext}"/> with the specified ref context and action. </summary>
     public static PassedRefActionClosure<TContext> CreateAction<TContext>(ref TContext context, RefAction<TContext> action) =>

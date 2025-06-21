@@ -23,28 +23,18 @@ public struct ActionClosure<TContext> {
 /// </summary>
 public struct ActionClosureRef<TContext> {
     event RefAction<TContext> RefAction;
-    public TContext Context { get; private set; }
+    TContext context;
+    public TContext Context => context;
     
-    readonly RefContextBehaviour refContextBehaviour;
-    
-    public ActionClosureRef(TContext context, RefAction<TContext> action, RefContextBehaviour refContextBehaviour) {
-        Context = context;
+    public ActionClosureRef(TContext context, RefAction<TContext> action) {
+        this.context = context;
         RefAction = action ?? throw new ArgumentNullException(nameof(action), "Action cannot be null.");
-        this.refContextBehaviour = refContextBehaviour;
     }
     
     public void AddAction(RefAction<TContext> action) => RefAction += action;
     public void RemoveAction(RefAction<TContext> action) => RefAction -= action;
 
-    public void Invoke() {
-        var ctx = Context;
-        RefAction.Invoke(ref ctx);
-        
-        if (refContextBehaviour is RefContextBehaviour.KeepStoredContext)
-            return;
-        
-        Context = ctx;
-    }
+    public void Invoke() => RefAction.Invoke(ref context);
 }
 
 /// <summary>
@@ -70,28 +60,18 @@ public struct ActionClosure<TContext, TArg> {
 /// </summary>
 public struct ActionClosureRef<TContext, TArg> {
     event ActionWithRefContext<TContext, TArg> ActionRefCtx;
-    public TContext Context { get; private set; }
+    TContext context;
+    public TContext Context => context;
     
-    readonly RefContextBehaviour refContextBehaviour;
-    
-    public ActionClosureRef(TContext context, ActionWithRefContext<TContext, TArg> action, RefContextBehaviour refContextBehaviour) {
-        Context = context;
+    public ActionClosureRef(TContext context, ActionWithRefContext<TContext, TArg> action) {
+        this.context = context;
         ActionRefCtx = action ?? throw new ArgumentNullException(nameof(action), "Action cannot be null.");
-        this.refContextBehaviour = refContextBehaviour;
     }
     
     public void AddAction(ActionWithRefContext<TContext, TArg> action) => ActionRefCtx += action;
     public void RemoveAction(ActionWithRefContext<TContext, TArg> action) => ActionRefCtx -= action;
 
-    public void Invoke(TArg arg) {
-        var ctx = Context;
-        ActionRefCtx.Invoke(ref ctx, arg);
-        
-        if (refContextBehaviour is RefContextBehaviour.KeepStoredContext)
-            return;
-        
-        Context = ctx;
-    }
+    public void Invoke(TArg arg) => ActionRefCtx.Invoke(ref context, arg);
 }
 
 /// <summary>
@@ -117,28 +97,19 @@ public struct RefActionClosure<TContext, TArg> {
 /// </summary>
 public struct RefActionClosureRef<TContext, TArg> {
     event RefAction<TContext, TArg> RefAction;
-    public TContext Context { get; private set; }
+    TContext context;
+    public TContext Context => context;
     
-    readonly RefContextBehaviour refContextBehaviour;
     
-    public RefActionClosureRef(TContext context, RefAction<TContext, TArg> action, RefContextBehaviour refContextBehaviour) {
-        Context = context;
+    public RefActionClosureRef(TContext context, RefAction<TContext, TArg> action) {
+        this.context = context;
         RefAction = action ?? throw new ArgumentNullException(nameof(action), "Action cannot be null.");
-        this.refContextBehaviour = refContextBehaviour;
     }
     
     public void AddAction(RefAction<TContext, TArg> action) => RefAction += action;
     public void RemoveAction(RefAction<TContext, TArg> action) => RefAction -= action;
 
-    public void Invoke(ref TArg arg) {
-        var ctx = Context;
-        RefAction.Invoke(ref ctx, ref arg);
-        
-        if (refContextBehaviour is RefContextBehaviour.KeepStoredContext)
-            return;
-        
-        Context = ctx;
-    }
+    public void Invoke(ref TArg arg) => RefAction.Invoke(ref context, ref arg);
 }
 
 /// <summary>

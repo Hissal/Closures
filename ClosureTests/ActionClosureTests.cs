@@ -15,10 +15,10 @@ namespace ClosureTests {
         }
         
         [Test]
-        public void ActionClosure_WithRefContext_UpdateStoredContext_Invoke_ModifiesTheContext() {
+        public void ActionClosure_WithRefContext_Invoke_ModifiesTheContext() {
             int context = 5;
             int value = 10;
-            var closure = Closure.CreateAction(context, (ref int ctx) => ctx += value, RefContextBehaviour.UpdateStoredContext);
+            var closure = Closure.CreateAction(context, (ref int ctx) => ctx += value);
 
             closure.Invoke();
 
@@ -41,13 +41,13 @@ namespace ClosureTests {
         }
         
         [Test]
-        public void ActionClosure_WithArgAndRefContext_UpdateStoredContext_Invoke_ModifiesTheContext() {
+        public void ActionClosure_WithArgAndRefContext_Invoke_ModifiesTheContext() {
             int context = 5;
             int value = 10;
             var closure = Closure.CreateAction(context, (ref int ctx, int val) => {
                 ctx += val;
                 value = ctx; // This will modify the value in the closure
-            }, RefContextBehaviour.UpdateStoredContext);
+            });
 
             closure.Invoke(3);
 
@@ -70,13 +70,13 @@ namespace ClosureTests {
         }
 
         [Test]
-        public void RefActionClosure_WithRefContext_UpdateStoredContext_Invoke_ModifiesContextValue() {
+        public void RefActionClosure_WithRefContext_Invoke_ModifiesContextValue() {
             int context = 3;
             int value = 4;
             var closure = Closure.CreateAction(context, (ref int ctx, ref int val) => {
                 val += ctx;
                 ctx *= 2; // This won't affect the original context but will affect the closure's context
-            }, RefContextBehaviour.UpdateStoredContext);
+            });
 
             closure.Invoke(ref value);
 
@@ -115,7 +115,7 @@ namespace ClosureTests {
         [Test]
         public void PassedRefActionClosure_WithArg_ContextIsUpdatedAfterInvoke() {
             int context = 3;
-            var closure = Closure.CreateAction<int, int>(ref context, (ref int ctx, int arg) => ctx += arg);
+            var closure = Closure.CreateAction(ref context, (ref int ctx, int arg) => ctx += arg);
 
             closure.Invoke(7);
 
@@ -126,7 +126,7 @@ namespace ClosureTests {
         public void PassedRefRefActionClosure_ContextIsUpdatedAfterInvoke() {
             int context = 4;
             int arg = 6;
-            var closure = Closure.CreateAction<int, int>(ref context, (ref int ctx, ref int a) => {
+            var closure = Closure.CreateAction(ref context, (ref int ctx, ref int a) => {
                 ctx += a;
                 a *= 2;
             });
