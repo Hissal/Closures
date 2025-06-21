@@ -80,7 +80,7 @@ namespace ClosureTests {
         public void RefFuncClosure_Invoke_ModifiesValueAndReturnsResult() {
             int context = 3;
             int value = 4;
-            var closure = Closure.CreateRefFunc(context, (int ctx, ref int val) => {
+            var closure = Closure.CreateFunc(context, (int ctx, ref int val) => {
                 val += ctx;
                 return val * 2;
             });
@@ -97,7 +97,7 @@ namespace ClosureTests {
         public void RefFuncClosure_WithRefContext_Invoke_ModifiesStoredContext_And_ReturnsResult() {
             int context = 2;
             int value = 5;
-            var closure = Closure.CreateRefFunc(context, (ref int ctx, ref int val) => {
+            var closure = Closure.CreateFunc(context, (ref int ctx, ref int val) => {
                 val += ctx;
                 ctx *= 2; // This won't affect the original context but will affect the closure's context
                 return val * 2;
@@ -147,7 +147,7 @@ namespace ClosureTests {
                 return arg * 2;
             }
 
-            var closure = Closure.CreateRefFunc<int, int, int>(context, Handler);
+            var closure = Closure.CreateFunc<int, int, int>(context, Handler);
             closure.AddFunc(Handler);
             int result = closure.Invoke(ref arg);
             closure.RemoveFunc(Handler);
@@ -158,6 +158,57 @@ namespace ClosureTests {
                 Assert.That(result, Is.EqualTo(12)); // Both handlers called, last one should give the result
                 Assert.That(result2, Is.EqualTo(16)); // Only one handler called
                 Assert.That(arg, Is.EqualTo(8)); // Final value of arg after all calls
+            });
+        }
+
+        [Test]
+        public void PassedRefFuncClosure_ContextIsUpdatedAfterInvoke() {
+            int context = 5;
+            var closure = Closure.CreateFunc(ref context, (ref int ctx) => {
+                ctx *= 3;
+                return ctx + 1;
+            });
+
+            int result = closure.Invoke();
+
+            Assert.Multiple(() => {
+                Assert.That(context, Is.EqualTo(15)); // context updated
+                Assert.That(result, Is.EqualTo(16));  // result reflects updated context
+            });
+        }
+
+        [Test]
+        public void PassedRefFuncClosure_WithArg_ContextIsUpdatedAfterInvoke() {
+            int context = 7;
+            var closure = Closure.CreateFunc(ref context, (ref int ctx, int arg) => {
+                ctx += arg;
+                return ctx * 2;
+            });
+
+            int result = closure.Invoke(8);
+
+            Assert.Multiple(() => {
+                Assert.That(context, Is.EqualTo(15)); // context updated
+                Assert.That(result, Is.EqualTo(30));  // result reflects updated context
+            });
+        }
+
+        [Test]
+        public void PassedRefRefFuncClosure_ContextAndArgAreUpdatedAfterInvoke() {
+            int context = 2;
+            int arg = 10;
+            var closure = Closure.CreateFunc(ref context, (ref int ctx, ref int a) => {
+                ctx += a;
+                a *= 2;
+                return ctx + a;
+            });
+
+            int result = closure.Invoke(ref arg);
+
+            Assert.Multiple(() => {
+                Assert.That(context, Is.EqualTo(12)); // context updated
+                Assert.That(arg, Is.EqualTo(20));     // arg updated
+                Assert.That(result, Is.EqualTo(32));  // result reflects updated values
             });
         }
     }

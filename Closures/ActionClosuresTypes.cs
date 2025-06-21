@@ -121,7 +121,7 @@ public ref struct PassedRefActionClosure<TContext> {
     readonly ref TContext context;
     
     public TContext Context => context;
-
+    
     public PassedRefActionClosure(ref TContext context, RefAction<TContext> action) {
         this.context = ref context;
         RefAction = action ?? throw new ArgumentNullException(nameof(action), "Action cannot be null.");
