@@ -27,7 +27,7 @@ public struct ActionClosureRef<TContext> {
     
     readonly RefContextBehaviour refContextBehaviour;
     
-    public ActionClosureRef(TContext context, RefAction<TContext> action, RefContextBehaviour refContextBehaviour = RefContextBehaviour.UpdateStoredContext) {
+    public ActionClosureRef(TContext context, RefAction<TContext> action, RefContextBehaviour refContextBehaviour) {
         Context = context;
         RefAction = action ?? throw new ArgumentNullException(nameof(action), "Action cannot be null.");
         this.refContextBehaviour = refContextBehaviour;
@@ -74,7 +74,7 @@ public struct ActionClosureRef<TContext, TArg> {
     
     readonly RefContextBehaviour refContextBehaviour;
     
-    public ActionClosureRef(TContext context, ActionWithRefContext<TContext, TArg> action, RefContextBehaviour refContextBehaviour = RefContextBehaviour.UpdateStoredContext) {
+    public ActionClosureRef(TContext context, ActionWithRefContext<TContext, TArg> action, RefContextBehaviour refContextBehaviour) {
         Context = context;
         ActionRefCtx = action ?? throw new ArgumentNullException(nameof(action), "Action cannot be null.");
         this.refContextBehaviour = refContextBehaviour;
@@ -121,7 +121,7 @@ public struct RefActionClosureRef<TContext, TArg> {
     
     readonly RefContextBehaviour refContextBehaviour;
     
-    public RefActionClosureRef(TContext context, RefAction<TContext, TArg> action, RefContextBehaviour refContextBehaviour = RefContextBehaviour.UpdateStoredContext) {
+    public RefActionClosureRef(TContext context, RefAction<TContext, TArg> action, RefContextBehaviour refContextBehaviour) {
         Context = context;
         RefAction = action ?? throw new ArgumentNullException(nameof(action), "Action cannot be null.");
         this.refContextBehaviour = refContextBehaviour;
@@ -138,5 +138,74 @@ public struct RefActionClosureRef<TContext, TArg> {
             return;
         
         Context = ctx;
+    }
+}
+
+/// <summary>
+/// Encapsulates a ref action delegate and a reference to the original context variable for invocation.
+/// <para>The original context variable passed by reference is updated when the closure is invoked.</para>
+/// </summary>
+public ref struct PassedRefActionClosure<TContext> {
+    event RefAction<TContext> RefAction;
+    readonly ref TContext context;
+    
+    public TContext Context => context;
+
+    public PassedRefActionClosure(ref TContext context, RefAction<TContext> action) {
+        this.context = ref context;
+        RefAction = action ?? throw new ArgumentNullException(nameof(action), "Action cannot be null.");
+    }
+    
+    public void AddAction(RefAction<TContext> action) => RefAction += action;
+    public void RemoveAction(RefAction<TContext> action) => RefAction -= action;
+    
+    public void Invoke() {
+        RefAction.Invoke(ref context);
+    }
+}
+
+/// <summary>
+/// Encapsulates an action delegate with ref context and an argument, holding a reference to the original context variable for invocation.
+/// <para>The original context variable passed by reference is updated when the closure is invoked.</para>
+/// </summary>
+public ref struct PassedRefActionClosure<TContext, TArg> {
+    event ActionWithRefContext<TContext, TArg> RefAction;
+    readonly ref TContext context;
+    
+    public TContext Context => context;
+
+    public PassedRefActionClosure(ref TContext context, ActionWithRefContext<TContext, TArg> action) {
+        this.context = ref context;
+        RefAction = action ?? throw new ArgumentNullException(nameof(action), "Action cannot be null.");
+    }
+    
+    public void AddAction(ActionWithRefContext<TContext, TArg> action) => RefAction += action;
+    public void RemoveAction(ActionWithRefContext<TContext, TArg> action) => RefAction -= action;
+    
+    public void Invoke(TArg arg) {
+        RefAction.Invoke(ref context, arg);
+    }
+}
+
+/// <summary>
+/// Encapsulates a ref action delegate with ref context and a ref argument, holding a reference to the original context variable for invocation.
+/// <para>The original context variable passed by reference is updated when the closure is invoked.</para>
+/// </summary>
+public ref struct PassedRefRefActionClosure<TContext, TArg> {
+    event RefAction<TContext, TArg> RefAction;
+    readonly ref TContext context;
+    
+    public TContext Context => context;
+
+    public PassedRefRefActionClosure(ref TContext context, RefAction<TContext, TArg> action) {
+        this.context = ref context;
+        RefAction = action ?? throw new ArgumentNullException(nameof(action), "Action cannot be null.");
+    }
+    
+    public void AddAction(RefAction<TContext, TArg> action) => RefAction += action;
+    public void RemoveAction(RefAction<TContext, TArg> action) => RefAction -= action;
+    
+    public void Invoke(ref TArg arg) {
+        RefAction.Invoke(ref context, ref arg);
     }
 }
