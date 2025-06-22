@@ -16,6 +16,24 @@ public static partial class Closure {
             Action = action,
             Context = context
         };
+    
+    public static TClosure CreateAction<TContext, TAction, TClosure>(TContext context, TAction action, MutatingClosureBehaviour mutatingBehaviour)
+        where TClosure : struct, IClosureAction<TContext, TAction>, IMutatingClosure
+        where TAction : Delegate 
+        => new TClosure() {
+            Action = action,
+            Context = context,
+            MutatingBehaviour = mutatingBehaviour
+        };
+
+    public static TClosure CreateAction<TContext, TArg, TAction, TClosure>(TContext context, TAction action, MutatingClosureBehaviour mutatingBehaviour)
+        where TClosure : struct, IClosureAction<TContext, TArg, TAction>, IMutatingClosure
+        where TAction : Delegate
+        => new TClosure() {
+            Action = action,
+            Context = context,
+            MutatingBehaviour = mutatingBehaviour
+        };
 }
 
 public interface IAction {
@@ -94,8 +112,9 @@ public struct ClosureRefAction<TContext, TArg> : IClosureRefAction<TContext, TAr
     public void Invoke(TArg arg) => Action.Invoke(Context, ref arg);
 }
 
-public struct MutatingClosureAction<TContext> : IClosureAction<TContext, RefAction<TContext>> {
+public struct MutatingClosureAction<TContext> : IClosureAction<TContext, RefAction<TContext>>, IMutatingClosure {
     public RefAction<TContext> Action { get; set; }
+    public MutatingClosureBehaviour MutatingBehaviour { get; set; }
     public TContext Context {
         get => context; 
         set => context = value;
@@ -103,38 +122,58 @@ public struct MutatingClosureAction<TContext> : IClosureAction<TContext, RefActi
     
     TContext context;
 
-    public MutatingClosureAction(TContext context, RefAction<TContext> action) {
+    public MutatingClosureAction(TContext context, RefAction<TContext> action, MutatingClosureBehaviour mutatingBehaviour = MutatingClosureBehaviour.KeepMutatedContext) {
         Context = context;
-        Action = action ?? throw new ArgumentNullException(nameof(action), "Action cannot be null.");
+        Action = action;
+        MutatingBehaviour = mutatingBehaviour;
     }
     
     public void AddAction(RefAction<TContext> action) => Action += action;
     public void RemoveAction(RefAction<TContext> action) => Action -= action;
     
-    public void Invoke() => Action.Invoke(ref context);
+    public void Invoke() {
+        if (MutatingBehaviour is MutatingClosureBehaviour.KeepMutatedContext) {
+            Action.Invoke(ref context);
+            return;
+        }
+        
+        var copiedContext = context;
+        Action.Invoke(ref copiedContext);
+    }
 }
 
-public struct MutatingClosureAction<TContext, TArg> : IClosureAction<TContext, TArg, ActionWithRefContext<TContext, TArg>> {
+public struct MutatingClosureAction<TContext, TArg> : IClosureAction<TContext, TArg, ActionWithRefContext<TContext, TArg>>, IMutatingClosure {
     public ActionWithRefContext<TContext, TArg> Action { get; set; }
+    public MutatingClosureBehaviour MutatingBehaviour { get; set; }
     public TContext Context {
         get => context; 
         set => context = value;
     }
     TContext context;
     
-    public MutatingClosureAction(TContext context, ActionWithRefContext<TContext, TArg> action) {
+    public MutatingClosureAction(TContext context, ActionWithRefContext<TContext, TArg> action, MutatingClosureBehaviour mutatingBehaviour = MutatingClosureBehaviour.KeepMutatedContext) {
         Context = context;
         Action = action;
+        MutatingBehaviour = mutatingBehaviour;
     }
     
     public void AddAction(ActionWithRefContext<TContext, TArg> action) => Action += action;
     public void RemoveAction(ActionWithRefContext<TContext, TArg> action) => Action -= action;
     
-    public void Invoke(TArg arg) => Action.Invoke(ref context, arg);
+    public void Invoke(TArg arg) {
+        if (MutatingBehaviour is MutatingClosureBehaviour.KeepMutatedContext) {
+            Action.Invoke(ref context, arg);
+            return;
+        }
+        
+        var copiedContext = context;
+        Action.Invoke(ref copiedContext, arg);
+    }
 }
 
-public struct MutatingClosureRefAction<TContext, TArg> : IClosureRefAction<TContext, TArg, RefAction<TContext, TArg>> {
+public struct MutatingClosureRefAction<TContext, TArg> : IClosureRefAction<TContext, TArg, RefAction<TContext, TArg>>, IMutatingClosure {
     public RefAction<TContext, TArg> Action { get; set; }
+    public MutatingClosureBehaviour MutatingBehaviour { get; set; }
     public TContext Context {
         get => context; 
         set => context = value;
@@ -142,16 +181,26 @@ public struct MutatingClosureRefAction<TContext, TArg> : IClosureRefAction<TCont
     
     TContext context;
 
-    public MutatingClosureRefAction(TContext context, RefAction<TContext, TArg> action) {
+    public MutatingClosureRefAction(TContext context, RefAction<TContext, TArg> action, MutatingClosureBehaviour mutatingBehaviour = MutatingClosureBehaviour.KeepMutatedContext) {
         Context = context;
-        Action = action ?? throw new ArgumentNullException(nameof(action), "Action cannot be null.");
+        Action = action;
+        MutatingBehaviour = mutatingBehaviour;
     }
     
     public void AddAction(RefAction<TContext, TArg> action) => Action += action;
     public void RemoveAction(RefAction<TContext, TArg> action) => Action -= action;
     
-    public void Invoke(ref TArg arg) => Action.Invoke(ref context, ref arg);
-    public void Invoke(TArg arg) => Action.Invoke(ref context, ref arg);
+    public void Invoke(ref TArg arg) {
+        if (MutatingBehaviour is MutatingClosureBehaviour.KeepMutatedContext) {
+            Action.Invoke(ref context, ref arg);
+            return;
+        }
+        
+        var copiedContext = context;
+        Action.Invoke(ref copiedContext, ref arg);
+    }
+
+    public void Invoke(TArg arg) => Invoke(ref arg);
 }
 
 public ref struct RefClosureAction<TContext> : IClosureAction<TContext, RefAction<TContext>> {
