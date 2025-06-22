@@ -1,4 +1,4 @@
-﻿namespace Closures;
+﻿namespace Lh.Closures;
 
 /// <summary>
 /// Encapsulates an action delegate and context for invocation.

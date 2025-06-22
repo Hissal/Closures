@@ -1,4 +1,4 @@
-﻿namespace Closures;
+﻿namespace Lh.Closures;
 
 /// <summary>
 /// Provides factory methods for creating closure structs that encapsulate context and delegate logic.

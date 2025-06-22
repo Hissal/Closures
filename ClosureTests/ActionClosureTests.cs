@@ -1,4 +1,4 @@
-﻿using Closures;
+﻿using Lh.Closures;
 
 namespace ClosureTests {
     [TestFixture]

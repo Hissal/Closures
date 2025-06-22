@@ -1,4 +1,4 @@
-﻿namespace Closures;
+﻿namespace Lh.Closures;
 
 /// <summary>
 /// Encapsulates a function delegate and context for invocation.

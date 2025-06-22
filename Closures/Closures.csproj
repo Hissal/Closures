@@ -4,6 +4,31 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <Company>Lassi Harjaluoma</Company>
+        <PackageId>Closures</PackageId>
+        <RootNamespace>Lh.Closures</RootNamespace>
+        <Version>1.0.0-alpha1</Version>
+        <Title>Closures</Title>
+        <Authors>Lassi Harjaluoma</Authors>
+        <Description>Closure structs that capture a context and a delegate that is invoked with the given context.</Description>
+        <Copyright>Copyright (c) Lassi Harjaluoma 2025.</Copyright>
+        <PackageProjectUrl>https://github.com/Hissal/Closures</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/Hissal/Closures</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageTags>Closure Capture Closures Delegate Event Action Func Function</PackageTags>
+
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+
+        <PackageIcon>Logo_128x128.png</PackageIcon>
+
+        <AssemblyName>Lh.Closures</AssemblyName>
     </PropertyGroup>
 
+    <ItemGroup>
+      <None Update="Logo_128x128.png">
+        <Pack>True</Pack>
+        <PackagePath>Logo_128x128.png</PackagePath>
+      </None>
+    </ItemGroup>
+    
 </Project>

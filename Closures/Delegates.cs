@@ -1,4 +1,4 @@
-﻿namespace Closures;
+﻿namespace Lh.Closures;
 
 /// <summary> Represents a delegate that operates on a value by reference. </summary>
 public delegate void RefAction<TArg>(ref TArg value);
