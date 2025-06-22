@@ -7,7 +7,7 @@ namespace ClosureTests {
         public void ActionClosure_Invoke_CallsActionWithContext() {
             int context = 42;
             int result = 0;
-            var closure = Closure.CreateAction(context, ctx => result = ctx + 1);
+            var closure = Closure.Action(context, ctx => result = ctx + 1);
 
             closure.Invoke();
 
@@ -18,7 +18,7 @@ namespace ClosureTests {
         public void ActionClosure_WithRefContext_Invoke_ModifiesTheContext() {
             int context = 5;
             int value = 10;
-            var closure = Closure.CreateAction(context, (ref int ctx) => ctx += value);
+            var closure = Closure.Action(context, (ref int ctx) => ctx += value);
 
             closure.Invoke();
 
@@ -33,7 +33,7 @@ namespace ClosureTests {
         public void ActionClosure_WithArg_Invoke_CallsActionWithContextAndArg() {
             string context = "prefix";
             string result = null;
-            var closure = Closure.CreateAction<string, string>(context, (ctx, arg) => result = ctx + arg);
+            var closure = Closure.Action<string, string>(context, (ctx, arg) => result = ctx + arg);
 
             closure.Invoke("Test");
 
@@ -44,7 +44,7 @@ namespace ClosureTests {
         public void ActionClosure_WithArgAndRefContext_Invoke_ModifiesTheContext() {
             int context = 5;
             int value = 10;
-            var closure = Closure.CreateAction(context, (ref int ctx, int val) => {
+            var closure = Closure.Action(context, (ref int ctx, int val) => {
                 ctx += val;
                 value = ctx; // This will modify the value in the closure
             });
@@ -62,7 +62,7 @@ namespace ClosureTests {
         public void RefActionClosure_WithNormalContext_Invoke_ModifiesArgValue() {
             int context = 5;
             int value = 10;
-            var closure = Closure.CreateAction(context, (int ctx, ref int val) => val += ctx);
+            var closure = Closure.Action(context, (int ctx, ref int val) => val += ctx);
 
             closure.Invoke(ref value);
 
@@ -73,7 +73,7 @@ namespace ClosureTests {
         public void RefActionClosure_WithRefContext_Invoke_ModifiesContextValue() {
             int context = 3;
             int value = 4;
-            var closure = Closure.CreateAction(context, (ref int ctx, ref int val) => {
+            var closure = Closure.Action(context, (ref int ctx, ref int val) => {
                 val += ctx;
                 ctx *= 2; // This won't affect the original context but will affect the closure's context
             });
@@ -93,7 +93,7 @@ namespace ClosureTests {
             int callCount = 0;
             void Handler(int ctx) => callCount += ctx;
 
-            var closure = Closure.CreateAction(context, Handler);
+            var closure = Closure.Action(context, Handler);
             closure.AddAction(Handler);
             closure.Invoke();
             closure.RemoveAction(Handler);
@@ -105,7 +105,7 @@ namespace ClosureTests {
         [Test]
         public void PassedRefActionClosure_ContextIsUpdatedAfterInvoke() {
             int context = 5;
-            var closure = Closure.CreateAction(ref context, (ref int ctx) => ctx *= 2);
+            var closure = Closure.Action(ref context, (ref int ctx) => ctx *= 2);
 
             closure.Invoke();
 
@@ -115,7 +115,7 @@ namespace ClosureTests {
         [Test]
         public void PassedRefActionClosure_WithArg_ContextIsUpdatedAfterInvoke() {
             int context = 3;
-            var closure = Closure.CreateAction(ref context, (ref int ctx, int arg) => ctx += arg);
+            var closure = Closure.Action(ref context, (ref int ctx, int arg) => ctx += arg);
 
             closure.Invoke(7);
 
@@ -126,7 +126,7 @@ namespace ClosureTests {
         public void PassedRefRefActionClosure_ContextIsUpdatedAfterInvoke() {
             int context = 4;
             int arg = 6;
-            var closure = Closure.CreateAction(ref context, (ref int ctx, ref int a) => {
+            var closure = Closure.Action(ref context, (ref int ctx, ref int a) => {
                 ctx += a;
                 a *= 2;
             });

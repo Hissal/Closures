@@ -33,8 +33,7 @@ for (int i = 0; i < 3; i++) {
 }
 
 foreach (var action in actions) {
-    action.Invoke();
-    // Output: 3, 3, 3
+    action.Invoke(); // Output: 3, 3, 3
 }
 ```
 You would see the output as `3, 3, 3`
@@ -53,11 +52,10 @@ for (int i = 0; i < 3; i++) {
 }
 
 foreach (var action in actions) {
-    action.Invoke();
-    // Output: 0, 1, 2
+    action.Invoke(); // Output: 0, 1, 2
 }
 ```
-Though this works, it allows `CapturedI` to escape its default lifetime when getting captured by the lambda,
+You would see the output as `0, 1, 2` Though this works, it allows `CapturedI` to be captured by the lambda escaping its scope,
 creating a closure allocation capture that is allocated on the heap.
 
 To avoid this overhead, you can use the `Closure` structs provided in this library:
@@ -73,37 +71,13 @@ for (int i = 0; i < 3; i++) {
 }
 
 foreach (var closure in closures) {
-    closure.Invoke();
-    // Output: 0, 1, 2
+    closure.Invoke(); // Output: 0, 1, 2
 }
 ```
 This way, you avoid unnecessary heap allocations when capturing variables, 
 which in turn reduces garbage collection overhead.
 This is especially beneficial in performance-critical scenarios, such as game development,
 where minimizing allocations and maximizing efficiency are crucial.
-
-## Closure Types
-- `ActionClosure<TContext>`: Captures a context of type `TContext` and invokes an action with that context.
-- `ActionClosureRef<TContext>`: Captures a context of type `TContext` by value and invokes a ref action that can mutate the stored context.
-- `ActionClosure<TContext, TArg>`: Captures a context of type `TContext` and invokes an action with an argument of type `TArg`.
-- `ActionClosureRef<TContext, TArg>`: Captures a context of type `TContext` by value and invokes an action with an argument, allowing mutation of the stored context.
-- `RefActionClosure<TContext, TArg>`: Captures a context of type `TContext` and invokes an action with a ref argument of type `TArg`.
-- `RefActionClosureRef<TContext, TArg>`: Captures a context of type `TContext` by value and invokes a ref action with a ref argument, allowing mutation of both context and argument.
-- `PassedRefActionClosure<TContext>`: Captures a reference to a context variable of type `TContext` and invokes a ref action, mutating the original variable.
-- `PassedRefActionClosure<TContext, TArg>`: Captures a reference to a context variable and invokes an action with an argument, mutating the original variable.
-- `PassedRefRefActionClosure<TContext, TArg>`: Captures a reference to a context variable and invokes a ref action with a ref argument, mutating both.
-
-
-- `FuncClosure<TContext, TResult>`: Captures a context of type `TContext` and invokes a function returning `TResult`.
-- `FuncClosureRef<TContext, TResult>`: Captures a context of type `TContext` by value and invokes a ref function, allowing mutation of the stored context.
-- `FuncClosure<TContext, TArg, TResult>`: Captures a context of type `TContext` and invokes a function with an argument, returning `TResult`.
-- `FuncClosureRef<TContext, TArg, TResult>`: Captures a context of type `TContext` by value and invokes a function with an argument, allowing mutation of the stored context.
-- `RefFuncClosure<TContext, TArg, TResult>`: Captures a context of type `TContext` and invokes a function with a ref argument, returning `TResult`.
-- `RefFuncClosureRef<TContext, TArg, TResult>`: Captures a context of type `TContext` by value and invokes a ref function with a ref argument, allowing mutation of both context and argument.
-- `PassedRefFuncClosure<TContext, TResult>`: Captures a reference to a context variable and invokes a ref function, mutating the original variable.
-- `PassedRefFuncClosure<TContext, TArg, TResult>`: Captures a reference to a context variable and invokes a function with an argument, mutating the original variable.
-- `PassedRefRefFuncClosure<TContext, TArg, TResult>`: Captures a reference to a context variable and invokes a ref function with a ref argument, mutating both.
-
 
 ## Performance
 The closures in this library are designed to minimize heap allocations and improve performance by capturing context values directly. This is particularly useful in scenarios where closures are frequently created and invoked, such as in loops or event handlers.
@@ -189,6 +163,30 @@ var passedRefFuncClosure = Closure.Create(ref passedMutableFuncContext, (ref int
 Console.WriteLine(passedRefFuncClosure.Invoke()); // Output: 80
 Console.WriteLine(passedMutableFuncContext); // Output: 80
 ```
+
+## Closure Types
+
+### Action Closures
+- `ActionClosure<TContext>`: Captures a context of type `TContext` and invokes an action with that context.
+- `ActionClosureRef<TContext>`: Captures a context of type `TContext` by value and invokes a ref action that can mutate the stored context.
+- `ActionClosure<TContext, TArg>`: Captures a context of type `TContext` and invokes an action with an argument of type `TArg`.
+- `ActionClosureRef<TContext, TArg>`: Captures a context of type `TContext` by value and invokes an action with an argument, allowing mutation of the stored context.
+- `RefActionClosure<TContext, TArg>`: Captures a context of type `TContext` and invokes an action with a ref argument of type `TArg`.
+- `RefActionClosureRef<TContext, TArg>`: Captures a context of type `TContext` by value and invokes a ref action with a ref argument, allowing mutation of both context and argument.
+- `PassedRefActionClosure<TContext>`: Captures a reference to a context variable of type `TContext` and invokes a ref action, mutating the original variable.
+- `PassedRefActionClosure<TContext, TArg>`: Captures a reference to a context variable and invokes an action with an argument, mutating the original variable.
+- `PassedRefRefActionClosure<TContext, TArg>`: Captures a reference to a context variable and invokes a ref action with a ref argument, mutating both.
+
+### Function Closures
+- `FuncClosure<TContext, TResult>`: Captures a context of type `TContext` and invokes a function returning `TResult`.
+- `FuncClosureRef<TContext, TResult>`: Captures a context of type `TContext` by value and invokes a ref function, allowing mutation of the stored context.
+- `FuncClosure<TContext, TArg, TResult>`: Captures a context of type `TContext` and invokes a function with an argument, returning `TResult`.
+- `FuncClosureRef<TContext, TArg, TResult>`: Captures a context of type `TContext` by value and invokes a function with an argument, allowing mutation of the stored context.
+- `RefFuncClosure<TContext, TArg, TResult>`: Captures a context of type `TContext` and invokes a function with a ref argument, returning `TResult`.
+- `RefFuncClosureRef<TContext, TArg, TResult>`: Captures a context of type `TContext` by value and invokes a ref function with a ref argument, allowing mutation of both context and argument.
+- `PassedRefFuncClosure<TContext, TResult>`: Captures a reference to a context variable and invokes a ref function, mutating the original variable.
+- `PassedRefFuncClosure<TContext, TArg, TResult>`: Captures a reference to a context variable and invokes a function with an argument, mutating the original variable.
+- `PassedRefRefFuncClosure<TContext, TArg, TResult>`: Captures a reference to a context variable and invokes a ref function with a ref argument, mutating both.
 
 ## Contributing
 If you would like to contribute to the Closures library,

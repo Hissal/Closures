@@ -5,40 +5,40 @@
 /// </summary>
 public static partial class Closure {
     /// <summary> Creates an <see cref="ActionClosure{TContext}"/> with the specified context and action. </summary>
-    public static ActionClosure<TContext> CreateAction<TContext>(TContext context, Action<TContext> action) =>
-        new ActionClosure<TContext>(context, action);
+    public static ClosureAction<TContext> Action<TContext>(TContext context, Action<TContext> action) =>
+        Create<TContext, Action<TContext>, ClosureAction<TContext>>(context, action);
 
     /// <summary> Creates an <see cref="ActionClosureRef{TContext}"/> with the specified context and action. </summary>
-    public static ActionClosureRef<TContext> CreateAction<TContext>(TContext context, RefAction<TContext> action) =>
-        new ActionClosureRef<TContext>(context, action);
+    public static MutatingClosureAction<TContext> Action<TContext>(TContext context, RefAction<TContext> action) =>
+        Create<TContext, RefAction<TContext>, MutatingClosureAction<TContext>>(context, action);
     
     /// <summary> Creates an <see cref="ActionClosure{TContext, TArg}"/> with the specified context and action. </summary>
-    public static ActionClosure<TContext, TArg> CreateAction<TContext, TArg>(TContext context, Action<TContext, TArg> action) =>
-        new ActionClosure<TContext, TArg>(context, action);
+    public static ClosureAction<TContext, TArg> Action<TContext, TArg>(TContext context, Action<TContext, TArg> action) =>
+        Create<TContext, TArg, Action<TContext, TArg>, ClosureAction<TContext, TArg>>(context, action);
     
     /// <summary> Creates an <see cref="ActionClosureRef{TContext, TArg}"/> with the specified context and action. </summary>
-    public static ActionClosureRef<TContext, TArg> CreateAction<TContext, TArg>(TContext context, ActionWithRefContext<TContext, TArg> action) =>
-        new ActionClosureRef<TContext, TArg>(context, action);
+    public static MutatingClosureAction<TContext, TArg> Action<TContext, TArg>(TContext context, ActionWithRefContext<TContext, TArg> action) =>
+        Create<TContext, TArg, ActionWithRefContext<TContext, TArg>, MutatingClosureAction<TContext, TArg>>(context, action);
     
     /// <summary> Creates a <see cref="RefActionClosure{TContext, TArg}"/> with the specified context and action. </summary>
-    public static RefActionClosure<TContext, TArg> CreateAction<TContext, TArg>(TContext context, RefActionWithNormalContext<TContext, TArg> action) =>
-        new RefActionClosure<TContext, TArg>(context, action);
+    public static ClosureRefAction<TContext, TArg> Action<TContext, TArg>(TContext context, RefActionWithNormalContext<TContext, TArg> action) =>
+        Create<TContext, TArg, RefActionWithNormalContext<TContext, TArg>, ClosureRefAction<TContext, TArg>>(context, action);
     
     /// <summary> Creates a <see cref="RefActionClosureRef{TContext, TArg}"/> with the specified context and action. </summary>
-    public static RefActionClosureRef<TContext, TArg> CreateAction<TContext, TArg>(TContext context, RefAction<TContext, TArg> action) =>
-        new RefActionClosureRef<TContext, TArg>(context, action);
+    public static MutatingClosureRefAction<TContext, TArg> Action<TContext, TArg>(TContext context, RefAction<TContext, TArg> action) =>
+        Create<TContext, TArg, RefAction<TContext, TArg>, MutatingClosureRefAction<TContext, TArg>>(context, action);
     
     /// <summary> Creates a <see cref="PassedRefActionClosure{TContext}"/> with the specified ref context and action. </summary>
-    public static PassedRefActionClosure<TContext> CreateAction<TContext>(ref TContext context, RefAction<TContext> action) =>
-        new PassedRefActionClosure<TContext>(ref context, action);
+    public static RefClosureAction<TContext> Action<TContext>(ref TContext context, RefAction<TContext> action) =>
+        new RefClosureAction<TContext>(ref context, action);
 
     /// <summary> Creates a <see cref="PassedRefActionClosure{TContext, TArg}"/> with the specified ref context and action. </summary>
-    public static PassedRefActionClosure<TContext, TArg> CreateAction<TContext, TArg>(ref TContext context, ActionWithRefContext<TContext, TArg> action) =>
-        new PassedRefActionClosure<TContext, TArg>(ref context, action);
+    public static RefClosureAction<TContext, TArg> Action<TContext, TArg>(ref TContext context, ActionWithRefContext<TContext, TArg> action) =>
+        new RefClosureAction<TContext, TArg>(ref context, action);
 
     /// <summary> Creates a <see cref="PassedRefRefActionClosure{TContext, TArg}"/> with the specified ref context and action. </summary>
-    public static PassedRefRefActionClosure<TContext, TArg> CreateAction<TContext, TArg>(ref TContext context, RefAction<TContext, TArg> action) =>
-        new PassedRefRefActionClosure<TContext, TArg>(ref context, action);
+    public static RefClosureRefAction<TContext, TArg> Action<TContext, TArg>(ref TContext context, RefAction<TContext, TArg> action) =>
+        new RefClosureRefAction<TContext, TArg>(ref context, action);
 }
 
 public static partial class Closure {
