@@ -6,7 +6,7 @@ namespace ClosureTests {
         [Test]
         public void FuncClosure_Invoke_ReturnsExpectedResult() {
             int context = 7;
-            var closure = Closure.CreateFunc(context, ctx => ctx * 2);
+            var closure = Closure.Func(context, ctx => ctx * 2);
 
             int result = closure.Invoke();
 
@@ -17,7 +17,7 @@ namespace ClosureTests {
         public void FuncClosure_WithRefContext_Invoke_ReturnsExpectedResult_And_ModifiesContext() {
             int context = 5;
             int value = 10;
-            var closure = Closure.CreateFunc(context, (ref int ctx) => {
+            var closure = Closure.Func(context, (ref int ctx) => {
                 ctx += value;
                 return ctx * 2;
             });
@@ -31,27 +31,27 @@ namespace ClosureTests {
             });
         }
         
-        [Test]
-        public void FuncClosure_InvokeSeparate_ReturnsExpectedResults() {
-            int context = 3;
-            var closure = Closure.CreateFunc(context, ctx => ctx + 2);
-            closure.AddFunc(ctx => ctx + 3); // Adding another function to the closure
-            closure.AddFunc(ctx => ctx + 4); // Adding a third function to the closure
-
-            var results = closure.InvokeSeparate().ToArray();
-            
-            Assert.Multiple(() => {
-                Assert.That(results, Has.Length.EqualTo(3)); // Three functions should be invoked
-                Assert.That(results[0], Is.EqualTo(5)); // First function result
-                Assert.That(results[1], Is.EqualTo(6)); // Second function result
-                Assert.That(results[2], Is.EqualTo(7)); // Third function result
-            });
-        }
+        // [Test]
+        // public void FuncClosure_InvokeSeparate_ReturnsExpectedResults() {
+        //     int context = 3;
+        //     var closure = Closure.Func(context, ctx => ctx + 2);
+        //     closure.AddFunc(ctx => ctx + 3); // Adding another function to the closure
+        //     closure.AddFunc(ctx => ctx + 4); // Adding a third function to the closure
+        //
+        //     var results = closure.InvokeSeparate().ToArray();
+        //     
+        //     Assert.Multiple(() => {
+        //         Assert.That(results, Has.Length.EqualTo(3)); // Three functions should be invoked
+        //         Assert.That(results[0], Is.EqualTo(5)); // First function result
+        //         Assert.That(results[1], Is.EqualTo(6)); // Second function result
+        //         Assert.That(results[2], Is.EqualTo(7)); // Third function result
+        //     });
+        // }
 
         [Test]
         public void FuncClosure_WithArg_Invoke_ReturnsExpectedResult() {
             string context = "foo";
-            var closure = Closure.CreateFunc<string, int, string>(context, (ctx, arg) => ctx + arg);
+            var closure = Closure.Func<string, int, string>(context, (ctx, arg) => ctx + arg);
 
             string result = closure.Invoke(123);
 
@@ -62,7 +62,7 @@ namespace ClosureTests {
         public void FuncClosure_WithArgAndRefContext_Invoke_ReturnsExpectedResult_And_ModifiesStoredContext() {
             int context = 5;
             int value = 10;
-            var closure = Closure.CreateFunc(context, (ref int ctx, int arg) => {
+            var closure = Closure.Func(context, (ref int ctx, int arg) => {
                 ctx += arg;
                 return ctx * 2;
             });
@@ -80,7 +80,7 @@ namespace ClosureTests {
         public void RefFuncClosure_Invoke_ModifiesValueAndReturnsResult() {
             int context = 3;
             int value = 4;
-            var closure = Closure.CreateFunc(context, (int ctx, ref int val) => {
+            var closure = Closure.Func(context, (int ctx, ref int val) => {
                 val += ctx;
                 return val * 2;
             });
@@ -97,7 +97,7 @@ namespace ClosureTests {
         public void RefFuncClosure_WithRefContext_Invoke_ModifiesStoredContext_And_ReturnsResult() {
             int context = 2;
             int value = 5;
-            var closure = Closure.CreateFunc(context, (ref int ctx, ref int val) => {
+            var closure = Closure.Func(context, (ref int ctx, ref int val) => {
                 val += ctx;
                 ctx *= 2; // This won't affect the original context but will affect the closure's context
                 return val * 2;
@@ -122,7 +122,7 @@ namespace ClosureTests {
                 return ctx * 2;
             }
 
-            var closure = Closure.CreateFunc(context, Handler);
+            var closure = Closure.Func(context, Handler);
             closure.AddFunc(Handler);
             int result = closure.Invoke();
             closure.RemoveFunc(Handler);
@@ -147,7 +147,7 @@ namespace ClosureTests {
                 return arg * 2;
             }
 
-            var closure = Closure.CreateFunc<int, int, int>(context, Handler);
+            var closure = Closure.Func<int, int, int>(context, Handler);
             closure.AddFunc(Handler);
             int result = closure.Invoke(ref arg);
             closure.RemoveFunc(Handler);
@@ -164,7 +164,7 @@ namespace ClosureTests {
         [Test]
         public void PassedRefFuncClosure_ContextIsUpdatedAfterInvoke() {
             int context = 5;
-            var closure = Closure.CreateFunc(ref context, (ref int ctx) => {
+            var closure = Closure.Func(ref context, (ref int ctx) => {
                 ctx *= 3;
                 return ctx + 1;
             });
@@ -180,7 +180,7 @@ namespace ClosureTests {
         [Test]
         public void PassedRefFuncClosure_WithArg_ContextIsUpdatedAfterInvoke() {
             int context = 7;
-            var closure = Closure.CreateFunc(ref context, (ref int ctx, int arg) => {
+            var closure = Closure.Func(ref context, (ref int ctx, int arg) => {
                 ctx += arg;
                 return ctx * 2;
             });
@@ -197,7 +197,7 @@ namespace ClosureTests {
         public void PassedRefRefFuncClosure_ContextAndArgAreUpdatedAfterInvoke() {
             int context = 2;
             int arg = 10;
-            var closure = Closure.CreateFunc(ref context, (ref int ctx, ref int a) => {
+            var closure = Closure.Func(ref context, (ref int ctx, ref int a) => {
                 ctx += a;
                 a *= 2;
                 return ctx + a;

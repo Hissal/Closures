@@ -1,7 +1,7 @@
 ﻿namespace Lh.Closures;
 
 public static partial class Closure {
-    public static TClosure Create<TContext, TAction, TClosure>(TContext context, TAction action)
+    public static TClosure CreateAction<TContext, TAction, TClosure>(TContext context, TAction action)
         where TClosure : struct, IClosureAction<TContext, TAction>
         where TAction : Delegate 
         => new TClosure() {
@@ -9,7 +9,7 @@ public static partial class Closure {
             Context = context
         };
 
-    public static TClosure Create<TContext, TArg, TAction, TClosure>(TContext context, TAction action)
+    public static TClosure CreateAction<TContext, TArg, TAction, TClosure>(TContext context, TAction action)
         where TClosure : struct, IClosureAction<TContext, TArg, TAction>
         where TAction : Delegate
         => new TClosure() {
