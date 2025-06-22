@@ -58,7 +58,7 @@ foreach (var action in actions) {
 You would see the output as `0, 1, 2` Though this works, it allows `tempI` to be captured by the lambda escaping its scope,
 creating a closure allocation capture that is allocated on the heap.
 
-To avoid this overhead, you can use the `Closure` structs provided in this library:
+To avoid this overhead, you can use `Closure` structs:
 ```csharp
 using Closures;
 
@@ -79,8 +79,8 @@ which in turn reduces garbage collection overhead.
 This is especially beneficial in performance-critical scenarios, such as game development,
 where minimizing allocations and maximizing efficiency are crucial.
 
-## Performance
-The closures in this library are designed to minimize heap allocations and improve performance by capturing context values directly. This is particularly useful in scenarios where closures are frequently created and invoked, such as in loops or event handlers.
+Video demonstration of closures and delegates:
+[Git Amend - Fix Closure Issues in 10 Minutes and Boost Performance](https://youtu.be/xiz24OqwEVI?si=gUapklV8JF0FaLTm)
 
 ## Usage
 To use the closures, simply create an instance of the desired closure type using the `Closure.Action` or `Closure.Func` methods, passing in the context and the delegate to be invoked. The closures can then be invoked like any other delegate.
