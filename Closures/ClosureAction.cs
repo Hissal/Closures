@@ -122,7 +122,7 @@ public struct MutatingClosureAction<TContext> : IClosureAction<TContext, RefActi
     
     TContext context;
 
-    public MutatingClosureAction(TContext context, RefAction<TContext> action, MutatingClosureBehaviour mutatingBehaviour = MutatingClosureBehaviour.KeepMutatedContext) {
+    public MutatingClosureAction(TContext context, RefAction<TContext> action, MutatingClosureBehaviour mutatingBehaviour = MutatingClosureBehaviour.Retain) {
         Context = context;
         Action = action;
         MutatingBehaviour = mutatingBehaviour;
@@ -132,7 +132,7 @@ public struct MutatingClosureAction<TContext> : IClosureAction<TContext, RefActi
     public void RemoveAction(RefAction<TContext> action) => Action -= action;
     
     public void Invoke() {
-        if (MutatingBehaviour is MutatingClosureBehaviour.KeepMutatedContext) {
+        if (MutatingBehaviour is MutatingClosureBehaviour.Retain) {
             Action.Invoke(ref context);
             return;
         }
@@ -151,7 +151,7 @@ public struct MutatingClosureAction<TContext, TArg> : IClosureAction<TContext, T
     }
     TContext context;
     
-    public MutatingClosureAction(TContext context, ActionWithRefContext<TContext, TArg> action, MutatingClosureBehaviour mutatingBehaviour = MutatingClosureBehaviour.KeepMutatedContext) {
+    public MutatingClosureAction(TContext context, ActionWithRefContext<TContext, TArg> action, MutatingClosureBehaviour mutatingBehaviour = MutatingClosureBehaviour.Retain) {
         Context = context;
         Action = action;
         MutatingBehaviour = mutatingBehaviour;
@@ -161,7 +161,7 @@ public struct MutatingClosureAction<TContext, TArg> : IClosureAction<TContext, T
     public void RemoveAction(ActionWithRefContext<TContext, TArg> action) => Action -= action;
     
     public void Invoke(TArg arg) {
-        if (MutatingBehaviour is MutatingClosureBehaviour.KeepMutatedContext) {
+        if (MutatingBehaviour is MutatingClosureBehaviour.Retain) {
             Action.Invoke(ref context, arg);
             return;
         }
@@ -181,7 +181,7 @@ public struct MutatingClosureRefAction<TContext, TArg> : IClosureRefAction<TCont
     
     TContext context;
 
-    public MutatingClosureRefAction(TContext context, RefAction<TContext, TArg> action, MutatingClosureBehaviour mutatingBehaviour = MutatingClosureBehaviour.KeepMutatedContext) {
+    public MutatingClosureRefAction(TContext context, RefAction<TContext, TArg> action, MutatingClosureBehaviour mutatingBehaviour = MutatingClosureBehaviour.Retain) {
         Context = context;
         Action = action;
         MutatingBehaviour = mutatingBehaviour;
@@ -191,7 +191,7 @@ public struct MutatingClosureRefAction<TContext, TArg> : IClosureRefAction<TCont
     public void RemoveAction(RefAction<TContext, TArg> action) => Action -= action;
     
     public void Invoke(ref TArg arg) {
-        if (MutatingBehaviour is MutatingClosureBehaviour.KeepMutatedContext) {
+        if (MutatingBehaviour is MutatingClosureBehaviour.Retain) {
             Action.Invoke(ref context, ref arg);
             return;
         }

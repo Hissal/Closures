@@ -122,7 +122,7 @@ public struct MutatingClosureFunc<TContext, TResult> : IClosureFunc<TContext, TR
     }
     TContext context;
 
-    public MutatingClosureFunc(TContext context, RefFunc<TContext, TResult> func, MutatingClosureBehaviour mutatingBehaviour = MutatingClosureBehaviour.KeepMutatedContext) {
+    public MutatingClosureFunc(TContext context, RefFunc<TContext, TResult> func, MutatingClosureBehaviour mutatingBehaviour = MutatingClosureBehaviour.Retain) {
         this.context = context;
         Func = func;
         MutatingBehaviour = mutatingBehaviour;
@@ -132,7 +132,7 @@ public struct MutatingClosureFunc<TContext, TResult> : IClosureFunc<TContext, TR
     public void RemoveFunc(RefFunc<TContext, TResult> func) => Func -= func;
 
     public TResult Invoke() {
-        if (MutatingBehaviour is MutatingClosureBehaviour.KeepMutatedContext) {
+        if (MutatingBehaviour is MutatingClosureBehaviour.Retain) {
             return Func.Invoke(ref context);
         }
         var copiedContext = context;
@@ -149,7 +149,7 @@ public struct MutatingClosureFunc<TContext, TArg, TResult> : IClosureFunc<TConte
     }
     TContext context;
 
-    public MutatingClosureFunc(TContext context, FuncWithRefContext<TContext, TArg, TResult> func, MutatingClosureBehaviour mutatingBehaviour = MutatingClosureBehaviour.KeepMutatedContext) {
+    public MutatingClosureFunc(TContext context, FuncWithRefContext<TContext, TArg, TResult> func, MutatingClosureBehaviour mutatingBehaviour = MutatingClosureBehaviour.Retain) {
         this.context = context;
         Func = func;
         MutatingBehaviour = mutatingBehaviour;
@@ -159,7 +159,7 @@ public struct MutatingClosureFunc<TContext, TArg, TResult> : IClosureFunc<TConte
     public void RemoveFunc(FuncWithRefContext<TContext, TArg, TResult> func) => Func -= func;
 
     public TResult Invoke(TArg arg) {
-        if (MutatingBehaviour is MutatingClosureBehaviour.KeepMutatedContext) {
+        if (MutatingBehaviour is MutatingClosureBehaviour.Retain) {
             return Func.Invoke(ref context, arg);
         }
         var copiedContext = context;
@@ -176,7 +176,7 @@ public struct MutatingClosureRefFunc<TContext, TArg, TResult> : IClosureRefFunc<
     }
     TContext context;
 
-    public MutatingClosureRefFunc(TContext context, RefFunc<TContext, TArg, TResult> func, MutatingClosureBehaviour mutatingBehaviour = MutatingClosureBehaviour.KeepMutatedContext) {
+    public MutatingClosureRefFunc(TContext context, RefFunc<TContext, TArg, TResult> func, MutatingClosureBehaviour mutatingBehaviour = MutatingClosureBehaviour.Retain) {
         this.context = context;
         Func = func;
         MutatingBehaviour = mutatingBehaviour;
@@ -186,7 +186,7 @@ public struct MutatingClosureRefFunc<TContext, TArg, TResult> : IClosureRefFunc<
     public void RemoveFunc(RefFunc<TContext, TArg, TResult> func) => Func -= func;
 
     public TResult Invoke(ref TArg arg) {
-        if (MutatingBehaviour is MutatingClosureBehaviour.KeepMutatedContext) {
+        if (MutatingBehaviour is MutatingClosureBehaviour.Retain) {
             return Func.Invoke(ref context, ref arg);
         }
         var copiedContext = context;

@@ -4,8 +4,8 @@ Closure structs that capture a context and a delegate that is invoked with the g
 ```csharp
 using Closures;
 
-var closure = Closure.Create(100, (context) => $"Captured Closure {context}");
-Console.WriteLine(closure.Invoke()); // Output: Captured Closure 100
+var closure = Closure.Action(100, (context) => $"Captured context {context}");
+Console.WriteLine(closure.Invoke()); // Output: Captured context 100
 ```
 ## Installation
 You can install the Closures library via NuGet Package Manager:
@@ -46,8 +46,8 @@ To fix this, you can capture the current value of `i` in a separate variable in 
 List<Action> actions = new List<Action>();
 
 for (int i = 0; i < 3; i++) {
-    var capturedI = i; // Capture the current value of i
-    var action = new Action(() => Console.WriteLine($"{capturedI}"));
+    var tempI = i; // Capture the current value of i
+    var action = new Action(() => Console.WriteLine($"{tempI}"));
     actions.Add(action);
 }
 
@@ -55,7 +55,7 @@ foreach (var action in actions) {
     action.Invoke(); // Output: 0, 1, 2
 }
 ```
-You would see the output as `0, 1, 2` Though this works, it allows `CapturedI` to be captured by the lambda escaping its scope,
+You would see the output as `0, 1, 2` Though this works, it allows `tempI` to be captured by the lambda escaping its scope,
 creating a closure allocation capture that is allocated on the heap.
 
 To avoid this overhead, you can use the `Closure` structs provided in this library:
@@ -66,7 +66,7 @@ List<ActionClosure<int>> closures = new List<ActionClosure<int>>();
 
 for (int i = 0; i < 3; i++) {
     // Create a closure that captures the current value of i
-    var closure = Closure.Create(i, (context) => Console.WriteLine($"{context}"));
+    var closure = Closure.Action(i, (context) => Console.WriteLine($"{context}"));
     closures.Add(closure);
 }
 
@@ -83,115 +83,149 @@ where minimizing allocations and maximizing efficiency are crucial.
 The closures in this library are designed to minimize heap allocations and improve performance by capturing context values directly. This is particularly useful in scenarios where closures are frequently created and invoked, such as in loops or event handlers.
 
 ## Usage
-To use the closures, simply create an instance of the desired closure type using the `Closure.Create` method, passing in the context and the delegate to be invoked. The closures can then be invoked like any other delegate.
+To use the closures, simply create an instance of the desired closure type using the `Closure.Action` or `Closure.Func` methods, passing in the context and the delegate to be invoked. The closures can then be invoked like any other delegate.
 
 ### Basic closures
-- `ActionClosure<TContext>` that captures a string context.
-- `FuncClosure<TContext, TResult>` that captures an integer context and returns a doubled value.
+- `ClosureAction<TContext>` that captures a string context.
+- `ClosureFunc<TContext, TResult>` that captures an integer context and returns a doubled value.
 
 ```csharp
 using Closures;
-// Example of ActionClosure
-var actionClosure = Closure.Create("captured context", (string context) => Console.WriteLine($"Action with context: {context}"));
-actionClosure.Invoke(); // Output: Action with context: captured context
 
-// Example of FuncClosure
-var funcClosure = Closure.Create(10, (int context) => context * 2);
-Console.WriteLine(funcClosure.Invoke()); // Output: 20
+// Example of ClosureAction
+var closureAction = Closure.Action("captured context", (string context) => Console.WriteLine($"Action with context - {context}"));
+closureAction.Invoke(); // Output: Action with context - captured context
+
+// Example of ClosureFunc
+var closureFunc = Closure.Func(10, (int context) => context * 2);
+Console.WriteLine(closureFunc.Invoke()); // Output: 20
+```
+
+### Mutating closures
+Mutating closures allow you to modify the captured context directly. 
+They are useful when you want to change the state of the context variable during the closure's execution.
+
+- `MutatingClosureAction<int>` that captures a mutable context.
+- `MutatingClosureFunc<int, int>` that captures a mutable context and returns the sum of modifications.
+
+```csharp
+using Closures;
+
+// Example of MutatingClosureAction
+var mutatingContext = 10;
+var mutatingClosureAction = Closure.Action(mutatingContext, (ref int context) => {
+    Console.WriteLine(context)
+    context += 5
+});
+mutatingClosureAction.AddAction((ref int context) => Console.WriteLine(context));
+mutatingClosureAction.Invoke(); // Output: 10, 15
+
+// Example of MutatingClosureFunc
+var mutatingFuncContext = 20;
+var mutatingClosureFunc = Closure.Func(mutatingFuncContext, (ref int context) => context *= 2);
+mutatingClosureFunc.AddFunc((ref int context) => context += 10);
+Console.WriteLine(mutatingClosureFunc.Invoke()); // Output: 50
+```
+`MutatingContextBehaviour` 
+allows you to define whether the context should always start with the initial value 
+or retain its modified state across invocations.
+
+```csharp
+using Closures;
+
+// Example of MutatingClosureAction with MutatingContextBehaviour.Retain
+var mutatingContext = 10;
+var mutatingClosureRetain = Closure.Action(mutatingContext, (ref int context) => {
+    Console.WriteLine($"{context}");
+    context += 5
+    Console.WriteLine($"{context}");
+}, MutatingContextBehaviour.Retain);
+
+mutatingClosureRetain.Invoke(); // Output: 10, 15
+console.WriteLine($"{mutatingClosureRetain.Context}"); // Output: 15
+
+// Example of MutatingClosureAction with MutatingContextBehaviour.Reset
+var mutatingContext = 10;
+var mutatingClosureReset = Closure.Action(mutatingContext, (ref int context) => {
+    Console.WriteLine($"{context}");
+    context += 5
+    Console.WriteLine($"{context}");
+}, MutatingContextBehaviour.Reset);
+
+mutatingClosureReset.Invoke(); // Output: 10, 15
+Console.WriteLine($"{mutatingClosureReset.Context}"); // Output: 10
+```
+
+### Ref closures
+Ref closures are ref structs that capture a reference to a context variable, allowing it to modify the original reference.
+
+- `RefActionClosure<int>` that captures a reference to a mutable context.
+- `RefFuncClosure<int, int>` that captures a reference to a mutable context and returns the modified value.
+
+```csharp
+using Closures;
+
+// Example of RefActionClosure
+var refContext = 30;
+var RefClosureAction = Closure.Action(ref refContext, (ref int context) => {
+    Console.WriteLine(context);
+    context += 10;
+});
+
+RefClosureAction.Invoke(); // Output: 30
+Console.WriteLine(refContext); // Output: 40
+
+// Example of RefFuncClosure
+var refClosureFunc = 40;
+var passedRefFuncClosure = Closure.Func(ref refFuncContext, (ref int context) => {
+    context *= 2;
+    return context * 2;
+});
+
+Console.WriteLine(refClosureFunc.Invoke()); // Output: 160
+Console.WriteLine(refFuncContext); // Output: 80
 ```
 
 ### Closures with an argument
-- `ActionClosure<TContext, TArg>` that captures a string context and is called with an int argument.
+Any closure can also accept an argument when invoked.
+
+- `ClosureAction<TContext, TArg>` that captures a string context and is called with an int argument.
 - `FuncClosure<TContext, TArg, TResult>` that captures an integer context, is called with an int argument and returns the sum of the context and argument.
 
 ```csharp
 using Closures;
 // Example of ActionClosure with an argument
-var actionClosureWithArg = Closure.Create("captured context", (string context, int arg) => Console.WriteLine($"Action with context: {context}, Arg: {arg}"));
-actionClosureWithArg.Invoke(5); // Output: Action with context: captured context, Arg: 5
+var closureActionWithArg = Closure.Action(10, (int context, int arg) => Console.WriteLine($"Context {context}, Arg: {arg}"));
+closureActionWithArg.Invoke(5); // Output: Context: 10, Arg: 5
 
-// Example of FuncClosure with an argument
-var funcClosureWithArg = Closure.Create(10, (int context, int arg) => context + arg);
-Console.WriteLine(funcClosureWithArg.Invoke(5)); // Output: 15
-```
-
-### Ref closures
-- `ActionClosureRef<int>` that captures a mutable context.
-- `FuncClosureRef<int, int>` that captures a mutable context and returns the sum of modifications.
-
-```csharp
-using Closures;
-// Example of ActionClosureRef
-var mutableContext = 10;
-var actionClosureRef = Closure.Create(mutableContext, (ref int context) => {
-    Console.WriteLine(context)
-    context += 5
-});
-actionClosureRef.AddAction((ref int context) => Console.WriteLine(context));
-actionClosureRef.Invoke(); // Output: 10, 15
-
-// Example of FuncClosureRef
-var mutableFuncContext = 20;
-var funcClosureRef = Closure.Create(mutableFuncContext, (ref int context) => context *= 2);
-funcClosureRef.AddFunc((ref int context) => context += 10);
-Console.WriteLine(funcClosureRef.Invoke()); // Output: 50
-```
-
-### Passed reference closures
-These are ref structs that capture a reference to a mutable context variable, allowing you to modify the original value.
-
-- `PassedRefActionClosure<int>` that captures a reference to a mutable context.
-- `PassedRefFuncClosure<int, int>` that captures a reference to a mutable context and returns the modified value.
-
-```csharp
-using Closures;
-// Example of PassedRefActionClosure
-var passedMutableContext = 30;
-var passedRefActionClosure = Closure.Create(ref passedMutableContext, (ref int context) => {
-    Console.WriteLine(context);
-    context += 10;
-});
-passedRefActionClosure.Invoke(); // Output: 30
-Console.WriteLine(passedMutableContext); // Output: 40
-
-// Example of PassedRefFuncClosure
-var passedMutableFuncContext = 40;
-var passedRefFuncClosure = Closure.Create(ref passedMutableFuncContext, (ref int context) => {
-    context *= 2;
-    return context;
-});
-Console.WriteLine(passedRefFuncClosure.Invoke()); // Output: 80
-Console.WriteLine(passedMutableFuncContext); // Output: 80
+// Example of ClosureFunc with an argument
+var closureFuncWithArg = Closure.Func(10, (int context, int arg) => context + arg);
+Console.WriteLine(closureFuncWithArg.Invoke(5)); // Output: 15
 ```
 
 ## Closure Types
 
 ### Action Closures
-- `ActionClosure<TContext>`: Captures a context of type `TContext` and invokes an action with that context.
-- `ActionClosureRef<TContext>`: Captures a context of type `TContext` by value and invokes a ref action that can mutate the stored context.
-- `ActionClosure<TContext, TArg>`: Captures a context of type `TContext` and invokes an action with an argument of type `TArg`.
-- `ActionClosureRef<TContext, TArg>`: Captures a context of type `TContext` by value and invokes an action with an argument, allowing mutation of the stored context.
-- `RefActionClosure<TContext, TArg>`: Captures a context of type `TContext` and invokes an action with a ref argument of type `TArg`.
-- `RefActionClosureRef<TContext, TArg>`: Captures a context of type `TContext` by value and invokes a ref action with a ref argument, allowing mutation of both context and argument.
-- `PassedRefActionClosure<TContext>`: Captures a reference to a context variable of type `TContext` and invokes a ref action, mutating the original variable.
-- `PassedRefActionClosure<TContext, TArg>`: Captures a reference to a context variable and invokes an action with an argument, mutating the original variable.
-- `PassedRefRefActionClosure<TContext, TArg>`: Captures a reference to a context variable and invokes a ref action with a ref argument, mutating both.
+- `ClosureAction<TContext>`: Captures a context of type `TContext` and invokes an action with that context.
+- `ClosureAction<TContext, TArg>`: Captures a context of type `TContext` and invokes an action with an argument of type `TArg`.
+- `ClosureRefAction<TContext, TArg>`: Captures a context of type `TContext` and invokes an action with a ref argument of type `TArg`.
+- `MutatingClosureAction<TContext>`: Captures a context of type `TContext` by value and invokes a ref action that can mutate the stored context.
+- `MutatingClosureAction<TContext, TArg>`: Captures a context of type `TContext` by value and invokes an action with an argument, allowing mutation of the stored context.
+- `MutatingClosureRefAction<TContext, TArg>`: Captures a context of type `TContext` by value and invokes a ref action with a ref argument, allowing mutation of both context and argument.
+- `RefClosureAction<TContext>`: Captures a reference to a context variable of type `TContext` and invokes a ref action, mutating the original variable.
+- `RefClosureAction<TContext, TArg>`: Captures a reference to a context variable and invokes an action with an argument, mutating the original variable.
+- `RefClosureRefAction<TContext, TArg>`: Captures a reference to a context variable and invokes a ref action with a ref argument, mutating both.
 
 ### Function Closures
-- `FuncClosure<TContext, TResult>`: Captures a context of type `TContext` and invokes a function returning `TResult`.
-- `FuncClosureRef<TContext, TResult>`: Captures a context of type `TContext` by value and invokes a ref function, allowing mutation of the stored context.
-- `FuncClosure<TContext, TArg, TResult>`: Captures a context of type `TContext` and invokes a function with an argument, returning `TResult`.
-- `FuncClosureRef<TContext, TArg, TResult>`: Captures a context of type `TContext` by value and invokes a function with an argument, allowing mutation of the stored context.
-- `RefFuncClosure<TContext, TArg, TResult>`: Captures a context of type `TContext` and invokes a function with a ref argument, returning `TResult`.
-- `RefFuncClosureRef<TContext, TArg, TResult>`: Captures a context of type `TContext` by value and invokes a ref function with a ref argument, allowing mutation of both context and argument.
-- `PassedRefFuncClosure<TContext, TResult>`: Captures a reference to a context variable and invokes a ref function, mutating the original variable.
-- `PassedRefFuncClosure<TContext, TArg, TResult>`: Captures a reference to a context variable and invokes a function with an argument, mutating the original variable.
-- `PassedRefRefFuncClosure<TContext, TArg, TResult>`: Captures a reference to a context variable and invokes a ref function with a ref argument, mutating both.
-
-## Contributing
-If you would like to contribute to the Closures library,
-feel free to submit a pull request or open an issue on the GitHub repository.
-Contributions are welcome, and we appreciate any feedback or improvements to the code.
+- `ClosureFunc<TContext, TResult>`: Captures a context of type `TContext` and invokes a function returning `TResult`.
+- `ClosureFunc<TContext, TArg, TResult>`: Captures a context of type `TContext` and invokes a function with an argument, returning `TResult`.
+- `ClosureRefFunc<TContext, TArg, TResult>`: Captures a context of type `TContext` and invokes a function with a ref argument, returning `TResult`.
+- `MutatingClosureFunc<TContext, TResult>`: Captures a context of type `TContext` by value and invokes a ref function, allowing mutation of the stored context.
+- `MutatingClosureFunc<TContext, TArg, TResult>`: Captures a context of type `TContext` by value and invokes a function with an argument, allowing mutation of the stored context.
+- `MutatingClosureRefFunc<TContext, TArg, TResult>`: Captures a context of type `TContext` by value and invokes a ref function with a ref argument, allowing mutation of both context and argument.
+- `RefClosureFunc<TContext, TResult>`: Captures a reference to a context variable and invokes a ref function, mutating the original variable.
+- `RefClosureFunc<TContext, TArg, TResult>`: Captures a reference to a context variable and invokes a function with an argument, mutating the original variable.
+- `RefClosureRefFunc<TContext, TArg, TResult>`: Captures a reference to a context variable and invokes a ref function with a ref argument, mutating both.
 
 ## License
 This project is licensed under the MIT License.
