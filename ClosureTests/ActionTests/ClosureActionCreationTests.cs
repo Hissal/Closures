@@ -4,24 +4,12 @@ namespace ClosureTests.ActionTests;
 
 [TestFixture]
 public class ActionClosureCreationTests {
-    public void DummyAction(int context) {
-        // Dummy action to satisfy the Closure.Action method signature
-    }
-    public void DummyActionWithArg(int context, int arg) {
-        // Dummy action to satisfy the Closure.Action method signature with an argument
-    }
-    public void DummyActionWithRefArg(int context, ref int arg) {
-        // Dummy action to satisfy the Closure.Action method signature with a reference argument
-    }
-    public void DummyActionWithRefContext(ref int context) {
-        // Dummy action to satisfy the Closure.Action method signature with a tuple context
-    }
-    public void DummyActionWithRefContextAndNormalArg(ref int context, int arg) {
-        // Dummy action to satisfy the Closure.Action method signature with a tuple context
-    }
-    public void DummyActionWithRefContextAndRefArg(ref int context, ref int arg) {
-        // Dummy action to satisfy the Closure.Action method signature with a tuple context and reference argument
-    }
+    public void DummyAction(int context) { }
+    public void DummyActionWithArg(int context, int arg) { }
+    public void DummyActionWithRefArg(int context, ref int arg) { }
+    public void DummyActionWithRefContext(ref int context) { }
+    public void DummyActionWithRefContextAndNormalArg(ref int context, int arg) { }
+    public void DummyActionWithRefContextAndRefArg(ref int context, ref int arg) { }
     
     [Test]
     public void ClosureAction_CreatesCorrectly() {
@@ -69,6 +57,7 @@ public class ActionClosureCreationTests {
         var closure = Closure.Action(context, action);
 
         Assert.Multiple(() => {
+            Assert.That(closure, Is.InstanceOf<IMutatingClosure>());
             Assert.That(closure, Is.InstanceOf<IClosureAction<int, RefAction<int>>>());
             Assert.That(closure.Context, Is.EqualTo(context));
             Assert.That(closure.Delegate, Is.EqualTo(action));
@@ -82,6 +71,7 @@ public class ActionClosureCreationTests {
         var closure = Closure.Action(context, action);
 
         Assert.Multiple(() => {
+            Assert.That(closure, Is.InstanceOf<IMutatingClosure>());
             Assert.That(closure, Is.InstanceOf<IClosureAction<int, int, ActionWithRefContext<int, int>>>());
             Assert.That(closure.Context, Is.EqualTo(context));
             Assert.That(closure.Delegate, Is.EqualTo(action));
@@ -95,6 +85,7 @@ public class ActionClosureCreationTests {
         var closure = Closure.Action(context, action);
 
         Assert.Multiple(() => {
+            Assert.That(closure, Is.InstanceOf<IMutatingClosure>());
             Assert.That(closure, Is.InstanceOf<IClosureAction<int, int, RefAction<int, int>>>());
             Assert.That(closure.Context, Is.EqualTo(context));
             Assert.That(closure.Delegate, Is.EqualTo(action));

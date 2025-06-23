@@ -154,12 +154,13 @@ public struct MutatingClosureRefFunc<TContext, TArg, TResult> : IClosureRefFunc<
     public TResult Invoke(TArg arg) => Invoke(ref arg);
 }
 
-public ref struct RefClosureFunc<TContext, TResult> : IClosureFunc<TContext, TResult, RefFunc<TContext, TResult>> {
+public ref struct RefClosureFunc<TContext, TResult> : IClosureFunc<TContext, TResult, RefFunc<TContext, TResult>>, IRefClosure<TContext> {
     public RefFunc<TContext, TResult> Delegate { get; set; }
     public TContext Context {
         get => context;
         set => context = value;
     }
+    public ref TContext RefContext => ref context;
     readonly ref TContext context;
 
     public RefClosureFunc(ref TContext context, RefFunc<TContext, TResult> func) {
@@ -171,14 +172,16 @@ public ref struct RefClosureFunc<TContext, TResult> : IClosureFunc<TContext, TRe
     public void Remove(RefFunc<TContext, TResult> func) => Delegate -= func;
 
     public TResult Invoke() => Delegate.Invoke(ref context);
+
 }
 
-public ref struct RefClosureFunc<TContext, TArg, TResult> : IClosureFunc<TContext, TArg, TResult, FuncWithRefContext<TContext, TArg, TResult>> {
+public ref struct RefClosureFunc<TContext, TArg, TResult> : IClosureFunc<TContext, TArg, TResult, FuncWithRefContext<TContext, TArg, TResult>>, IRefClosure<TContext> {
     public FuncWithRefContext<TContext, TArg, TResult> Delegate { get; set; }
     public TContext Context {
         get => context;
         set => context = value;
     }
+    public ref TContext RefContext => ref context;
     readonly ref TContext context;
 
     public RefClosureFunc(ref TContext context, FuncWithRefContext<TContext, TArg, TResult> func) {
@@ -192,12 +195,13 @@ public ref struct RefClosureFunc<TContext, TArg, TResult> : IClosureFunc<TContex
     public TResult Invoke(TArg arg) => Delegate.Invoke(ref context, arg);
 }
 
-public ref struct RefClosureRefFunc<TContext, TArg, TResult> : IClosureRefFunc<TContext, TArg, TResult, RefFunc<TContext, TArg, TResult>> {
+public ref struct RefClosureRefFunc<TContext, TArg, TResult> : IClosureRefFunc<TContext, TArg, TResult, RefFunc<TContext, TArg, TResult>>, IRefClosure<TContext> {
     public RefFunc<TContext, TArg, TResult> Delegate { get; set; }
     public TContext Context {
         get => context;
         set => context = value;
     }
+    public ref TContext RefContext => ref context;
     readonly ref TContext context;
 
     public RefClosureRefFunc(ref TContext context, RefFunc<TContext, TArg, TResult> func) {
