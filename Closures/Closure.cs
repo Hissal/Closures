@@ -9,6 +9,10 @@ public interface IMutatingClosure {
     MutatingClosureBehaviour MutatingBehaviour { get; set; }
 }
 
+public interface IRefClosure<TContext> {
+    ref TContext RefContext { get; }
+}
+
 public interface IClosure {
     
 }

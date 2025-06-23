@@ -223,7 +223,3 @@ public ref struct RefClosureRefAction<TContext, TArg> : IClosureRefAction<TConte
     public void Invoke(TArg arg) => Delegate.Invoke(ref context, ref arg);
 
 }
-
-public interface IRefClosure<TContext> {
-    ref TContext RefContext { get; }
-}

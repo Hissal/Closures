@@ -97,7 +97,7 @@ To use the closures, simply create an instance of the desired closure type using
 
 ### Basic closures
 - `ClosureAction<string>` that captures a string context.
-- `ClosureFunc<int, int>` that captures an integer context and returns a doubled value.
+- `ClosureFunc<int, int>` that captures an int context and returns a doubled value.
 
 ```csharp
 using Closures;
@@ -139,9 +139,7 @@ Console.WriteLine(mutatingClosureFunc.Invoke()); // Output: 50
 ```
 `MutatingContextBehaviour`
 allows you to define whether the context should be reset to the initial value 
-or retain its modified state after invocation.
-
-`MutatingContextBehaviour` has two options: `Retain` and `Reset`.
+or retain its modified state after invocation. It has two options: `Retain` and `Reset`.
 The default behavior is `Retain`, meaning the context will keep its modified state after the closure is invoked.
 
 ```csharp
@@ -204,7 +202,7 @@ Console.WriteLine(refFuncContext); // Output: 80
 Any closure can also accept an argument when invoked.
 
 - `ClosureAction<TContext, TArg>` that captures an int context and is called with an int argument.
-- `FuncClosure<TContext, TArg, TResult>` that captures an int context, is called with an int argument and returns the sum of the context and argument.
+- `ClosureFunc<TContext, TArg, TResult>` that captures an int context, is called with an int argument and returns the sum of the context and argument.
 
 ```csharp
 using Closures;
@@ -215,6 +213,32 @@ closureActionWithArg.Invoke(5); // Output: Context: 10, Arg: 5
 // Example of ClosureFunc with an argument
 var closureFuncWithArg = Closure.Func(10, (int context, int arg) => context + arg);
 Console.WriteLine(closureFuncWithArg.Invoke(5)); // Output: 15
+```
+
+The argument can also be passed as ref, allowing the closure to modify the argument value.
+
+- `ClosureRefAction<int, int>` that captures an int context and is called with a ref int argument which is set to the value of context.
+- `ClosureRefFunc<int, int, int>` that captures an int context, is called with a ref int argument which is set to the value of context and returns the sum of the context and argument.
+
+```csharp
+using Closures;
+// Example of ActionClosure with an argument
+int arg = 5;
+var closureActionWithArg = Closure.Action(10, (int context, ref int arg) => arg = context);
+closureActionWithArg.Invoke(ref arg);
+Console.WriteLine(arg); // Output: 10
+
+// Example of ClosureFunc with an argument
+var funcArg = 5;
+var closureFuncWithArg = Closure.Func(10, (int context, ref int arg) => {
+    var sum = context + arg;
+    arg = context;
+    return sum;
+});
+
+var returnValue = closureFuncWithArg.Invoke(ref funcArg)
+Console.WriteLine(returnValue); // Output: 15
+Console.WriteLine(funcArg); // Output: 10
 ```
 
 ## Closure Types
