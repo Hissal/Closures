@@ -50,16 +50,16 @@ public interface IClosureAction<TContext, TAction> : IAction where TAction : Del
     public TAction Action { get; set; }
     TContext Context { get; set; }
     
-    void AddAction(TAction action);
-    void RemoveAction(TAction action);
+    void Add(TAction action);
+    void Remove(TAction action);
 }
 
 public interface IClosureAction<TContext, in TArg, TAction> : IAction<TArg> where TAction : Delegate {
     public TAction Action { get; set; }
     TContext Context { get; set; }
     
-    void AddAction(TAction action);
-    void RemoveAction(TAction action);
+    void Add(TAction action);
+    void Remove(TAction action);
 }
 
 public interface IClosureRefAction<TContext, TArg, TAction> : IClosureAction<TContext, TArg, TAction>, IRefAction<TArg> where TAction : Delegate {
@@ -75,8 +75,8 @@ public struct ClosureAction<TContext> : IClosureAction<TContext, Action<TContext
         Action = action;
     }
     
-    public void AddAction(Action<TContext> action) => Action += action;
-    public void RemoveAction(Action<TContext> action) => Action -= action;
+    public void Add(Action<TContext> action) => Action += action;
+    public void Remove(Action<TContext> action) => Action -= action;
     
     public void Invoke() => Action.Invoke(Context);
 }
@@ -90,8 +90,8 @@ public struct ClosureAction<TContext, TArg> : IClosureAction<TContext, TArg, Act
         Action = action;
     }
     
-    public void AddAction(Action<TContext, TArg> action) => Action += action;
-    public void RemoveAction(Action<TContext, TArg> action) => Action -= action;
+    public void Add(Action<TContext, TArg> action) => Action += action;
+    public void Remove(Action<TContext, TArg> action) => Action -= action;
     
     public void Invoke(TArg arg) => Action.Invoke(Context, arg);
 }
@@ -105,8 +105,8 @@ public struct ClosureRefAction<TContext, TArg> : IClosureRefAction<TContext, TAr
         Action = action;
     }
     
-    public void AddAction(RefActionWithNormalContext<TContext, TArg> action) => Action += action;
-    public void RemoveAction(RefActionWithNormalContext<TContext, TArg> action) => Action -= action;
+    public void Add(RefActionWithNormalContext<TContext, TArg> action) => Action += action;
+    public void Remove(RefActionWithNormalContext<TContext, TArg> action) => Action -= action;
     
     public void Invoke(ref TArg arg) => Action.Invoke(Context, ref arg);
     public void Invoke(TArg arg) => Action.Invoke(Context, ref arg);
@@ -128,8 +128,8 @@ public struct MutatingClosureAction<TContext> : IClosureAction<TContext, RefActi
         MutatingBehaviour = mutatingBehaviour;
     }
     
-    public void AddAction(RefAction<TContext> action) => Action += action;
-    public void RemoveAction(RefAction<TContext> action) => Action -= action;
+    public void Add(RefAction<TContext> action) => Action += action;
+    public void Remove(RefAction<TContext> action) => Action -= action;
     
     public void Invoke() {
         if (MutatingBehaviour is MutatingClosureBehaviour.Retain) {
@@ -157,8 +157,8 @@ public struct MutatingClosureAction<TContext, TArg> : IClosureAction<TContext, T
         MutatingBehaviour = mutatingBehaviour;
     }
     
-    public void AddAction(ActionWithRefContext<TContext, TArg> action) => Action += action;
-    public void RemoveAction(ActionWithRefContext<TContext, TArg> action) => Action -= action;
+    public void Add(ActionWithRefContext<TContext, TArg> action) => Action += action;
+    public void Remove(ActionWithRefContext<TContext, TArg> action) => Action -= action;
     
     public void Invoke(TArg arg) {
         if (MutatingBehaviour is MutatingClosureBehaviour.Retain) {
@@ -187,8 +187,8 @@ public struct MutatingClosureRefAction<TContext, TArg> : IClosureRefAction<TCont
         MutatingBehaviour = mutatingBehaviour;
     }
     
-    public void AddAction(RefAction<TContext, TArg> action) => Action += action;
-    public void RemoveAction(RefAction<TContext, TArg> action) => Action -= action;
+    public void Add(RefAction<TContext, TArg> action) => Action += action;
+    public void Remove(RefAction<TContext, TArg> action) => Action -= action;
     
     public void Invoke(ref TArg arg) {
         if (MutatingBehaviour is MutatingClosureBehaviour.Retain) {
@@ -203,33 +203,35 @@ public struct MutatingClosureRefAction<TContext, TArg> : IClosureRefAction<TCont
     public void Invoke(TArg arg) => Invoke(ref arg);
 }
 
-public ref struct RefClosureAction<TContext> : IClosureAction<TContext, RefAction<TContext>> {
+public ref struct RefClosureAction<TContext> : IClosureAction<TContext, RefAction<TContext>>, IRefClosure<TContext> {
     public RefAction<TContext> Action { get; set; }
     public TContext Context {
         get => context; 
         set => context = value;
     }
     
-    ref TContext context;
+    public ref TContext RefContext => ref context;
+    readonly ref TContext context;
 
     public RefClosureAction(ref TContext context, RefAction<TContext> action) {
         this.context = ref context;
         Action = action;
     }
     
-    public void AddAction(RefAction<TContext> action) => Action += action;
-    public void RemoveAction(RefAction<TContext> action) => Action -= action;
+    public void Add(RefAction<TContext> action) => Action += action;
+    public void Remove(RefAction<TContext> action) => Action -= action;
     
     public void Invoke() => Action.Invoke(ref context);
 }
 
-public ref struct RefClosureAction<TContext, TArg> : IClosureAction<TContext, TArg, ActionWithRefContext<TContext, TArg>> {
+public ref struct RefClosureAction<TContext, TArg> : IClosureAction<TContext, TArg, ActionWithRefContext<TContext, TArg>>, IRefClosure<TContext> {
     public ActionWithRefContext<TContext, TArg> Action { get; set; }
     public TContext Context {
         get => context; 
         set => context = value;
     }
 
+    public ref TContext RefContext => ref context;
     readonly ref TContext context;
     
     public RefClosureAction(ref TContext context, ActionWithRefContext<TContext, TArg> action) {
@@ -237,19 +239,20 @@ public ref struct RefClosureAction<TContext, TArg> : IClosureAction<TContext, TA
         Action = action;
     }
     
-    public void AddAction(ActionWithRefContext<TContext, TArg> action) => Action += action;
-    public void RemoveAction(ActionWithRefContext<TContext, TArg> action) => Action -= action;
+    public void Add(ActionWithRefContext<TContext, TArg> action) => Action += action;
+    public void Remove(ActionWithRefContext<TContext, TArg> action) => Action -= action;
     
     public void Invoke(TArg arg) => Action.Invoke(ref context, arg);
 }
 
-public ref struct RefClosureRefAction<TContext, TArg> : IClosureRefAction<TContext, TArg, RefAction<TContext, TArg>> {
+public ref struct RefClosureRefAction<TContext, TArg> : IClosureRefAction<TContext, TArg, RefAction<TContext, TArg>>, IRefClosure<TContext> {
     public RefAction<TContext, TArg> Action { get; set; }
     public TContext Context {
         get => context; 
         set => context = value;
     }
-
+    public ref TContext RefContext => ref context;
+    
     readonly ref TContext context;
     
     public RefClosureRefAction(ref TContext context, RefAction<TContext, TArg> action) {
@@ -257,9 +260,14 @@ public ref struct RefClosureRefAction<TContext, TArg> : IClosureRefAction<TConte
         Action = action;
     }
     
-    public void AddAction(RefAction<TContext, TArg> action) => Action += action;
-    public void RemoveAction(RefAction<TContext, TArg> action) => Action -= action;
+    public void Add(RefAction<TContext, TArg> action) => Action += action;
+    public void Remove(RefAction<TContext, TArg> action) => Action -= action;
     
     public void Invoke(ref TArg arg) => Action.Invoke(ref context, ref arg);
     public void Invoke(TArg arg) => Action.Invoke(ref context, ref arg);
+
+}
+
+public interface IRefClosure<TContext> {
+    ref TContext RefContext { get; }
 }

@@ -24,6 +24,11 @@ in a lambda expression show significant improvements in execution time and memor
 
 ![](img/Benchmark_CaptureI.png)
 
+### Closures
+- [Basic Closures](#basic-closures)
+- [Mutating Closures](#mutating-closures)
+- [Ref Closures](#ref-closures)
+
 ## Why?
 Due to the nature of closures, 
 the context is captured as reference.
@@ -83,7 +88,6 @@ This way, you avoid unnecessary heap allocations when capturing variables,
 which in turn reduces garbage collection overhead.
 This is especially beneficial in performance-critical scenarios, such as game development,
 where minimizing allocations and maximizing efficiency is crucial.
-
 
 Closures Explained: [Closures | In 210 Seconds](https://youtu.be/jHd0FczIjAE?si=5slaULcQxYZN3EES)<br>
 Video demonstration of a similar concept: [Fix Closure Issues in 10 Minutes and Boost Performance](https://youtu.be/xiz24OqwEVI?si=gUapklV8JF0FaLTm)
@@ -199,8 +203,8 @@ Console.WriteLine(refFuncContext); // Output: 80
 ### Closures with an argument
 Any closure can also accept an argument when invoked.
 
-- `ClosureAction<TContext, TArg>` that captures a string context and is called with an int argument.
-- `FuncClosure<TContext, TArg, TResult>` that captures an integer context, is called with an int argument and returns the sum of the context and argument.
+- `ClosureAction<TContext, TArg>` that captures an int context and is called with an int argument.
+- `FuncClosure<TContext, TArg, TResult>` that captures an int context, is called with an int argument and returns the sum of the context and argument.
 
 ```csharp
 using Closures;
