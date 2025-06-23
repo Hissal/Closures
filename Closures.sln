@@ -4,7 +4,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Closures", "Closures\Closur
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClosureTests", "ClosureTests\ClosureTests.csproj", "{745B1A6C-41D2-4BC7-BEFB-EF53F795907F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClosureBenchmarking", "ClosureBenchmarking\ClosureBenchmarking.csproj", "{4458B51F-A723-422D-9A16-EBD1FC32CBAC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClosureBenchmarks", "ClosureBenchmarks\ClosureBenchmarks.csproj", "{4458B51F-A723-422D-9A16-EBD1FC32CBAC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
