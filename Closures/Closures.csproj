@@ -7,7 +7,7 @@
         <Company>Lassi Harjaluoma</Company>
         <PackageId>Closures</PackageId>
         <RootNamespace>Lh.Closures</RootNamespace>
-        <Version>1.0.0-alpha1</Version>
+        <Version>1.0.0-alpha2</Version>
         <Title>Closures</Title>
         <Authors>Lassi Harjaluoma</Authors>
         <Description>Closure structs that capture a context and a delegate that is invoked with the given context.</Description>
@@ -22,6 +22,19 @@
         <PackageIcon>Logo_128x128.png</PackageIcon>
 
         <AssemblyName>Lh.Closures</AssemblyName>
+
+        <PackageReleaseNotes>Closures are now created using: 
+            Closure.Action() &amp; Closure.Func()
+
+Changed names of closure types - Main types are now:
+- Closure(Action/Func)
+- ClosureRef(Action/Func)
+- MutatingClosure(Action/Func)
+- MutatingClosureRef(Action/Func)
+- RefClosure(Action/Func)
+- RefClosureRef(Action/Func)
+
+Added MutatingClosureBehaviour enum which controls whether the context inside a mutating closure is Retained or Reset after invocation.</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>

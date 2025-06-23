@@ -19,6 +19,11 @@ Or by using the .NET CLI:
 dotnet add package Closures
 ```
 
+Performance benchmarks of the below code using closures vs capturing variables
+in a lambda expression show significant improvements in execution time and memory allocation.
+
+![](img/Benchmark_CaptureI.png)
+
 ## Why?
 Due to the nature of closures, 
 the context is captured as reference.
@@ -79,15 +84,16 @@ which in turn reduces garbage collection overhead.
 This is especially beneficial in performance-critical scenarios, such as game development,
 where minimizing allocations and maximizing efficiency are crucial.
 
-Video demonstration of closures and delegates:
-[Git Amend - Fix Closure Issues in 10 Minutes and Boost Performance](https://youtu.be/xiz24OqwEVI?si=gUapklV8JF0FaLTm)
+
+Closures Explained: [Closures | In 210 Seconds](https://youtu.be/jHd0FczIjAE?si=5slaULcQxYZN3EES)<br>
+Video demonstration of a similar concept: [Fix Closure Issues in 10 Minutes and Boost Performance](https://youtu.be/xiz24OqwEVI?si=gUapklV8JF0FaLTm)
 
 ## Usage
 To use the closures, simply create an instance of the desired closure type using the `Closure.Action` or `Closure.Func` methods, passing in the context and the delegate to be invoked. The closures can then be invoked like any other delegate.
 
 ### Basic closures
-- `ClosureAction<TContext>` that captures a string context.
-- `ClosureFunc<TContext, TResult>` that captures an integer context and returns a doubled value.
+- `ClosureAction<string>` that captures a string context.
+- `ClosureFunc<int, int>` that captures an integer context and returns a doubled value.
 
 ```csharp
 using Closures;
@@ -126,14 +132,16 @@ var mutatingClosureFunc = Closure.Func(mutatingFuncContext, (ref int context) =>
 mutatingClosureFunc.AddFunc((ref int context) => context += 10);
 Console.WriteLine(mutatingClosureFunc.Invoke()); // Output: 50
 ```
-`MutatingContextBehaviour` 
-allows you to define whether the context should always start with the initial value 
-or retain its modified state across invocations.
+`MutatingContextBehaviour`
+allows you to define whether the context should be reset to the initial value 
+or retain its modified state after invocation.
+
+`MutatingContextBehaviour` has two options: `Retain` and `Reset`.
 
 ```csharp
 using Closures;
 
-// Example of MutatingClosureAction with MutatingContextBehaviour.Retain
+// Example of MutatingContextBehaviour.Retain
 var mutatingContext = 10;
 var mutatingClosureRetain = Closure.Action(mutatingContext, (ref int context) => {
     Console.WriteLine($"{context}");
@@ -144,7 +152,7 @@ var mutatingClosureRetain = Closure.Action(mutatingContext, (ref int context) =>
 mutatingClosureRetain.Invoke(); // Output: 10, 15
 console.WriteLine($"{mutatingClosureRetain.Context}"); // Output: 15
 
-// Example of MutatingClosureAction with MutatingContextBehaviour.Reset
+// Example of MutatingContextBehaviour.Reset
 var mutatingContext = 10;
 var mutatingClosureReset = Closure.Action(mutatingContext, (ref int context) => {
     Console.WriteLine($"{context}");
