@@ -19,8 +19,8 @@ Or by using the .NET CLI:
 dotnet add package Closures
 ```
 
-Performance benchmarks of the below code using closures vs capturing variables
-in a lambda expression show significant improvements in execution time and memory allocation.
+Performance benchmarks of the code from the Why? section using closure structs vs capturing variables
+in a lambda expression shows significant improvements in execution time and memory allocation.
 
 ![](img/Benchmark_CaptureI.png)
 
@@ -137,15 +137,16 @@ var mutatingClosureFunc = Closure.Func(mutatingFuncContext, (ref int context) =>
 mutatingClosureFunc.AddFunc((ref int context) => context += 10);
 Console.WriteLine(mutatingClosureFunc.Invoke()); // Output: 50
 ```
-`MutatingContextBehaviour`
+`MutatingClosureBehaviour`
 allows you to define whether the context should be reset to the initial value 
 or retain its modified state after invocation. It has two options: `Retain` and `Reset`.
 The default behavior is `Retain`, meaning the context will keep its modified state after the closure is invoked.
+While `Reset` will reset the context to its initial value after invocation.
 
 ```csharp
 using Closures;
 
-// Example of MutatingContextBehaviour.Retain
+// Example of MutatingClosureBehaviour.Retain
 var mutatingContext = 10;
 var mutatingClosureRetain = Closure.Action(mutatingContext, (ref int context) => {
     Console.WriteLine($"{context}");
@@ -156,7 +157,7 @@ var mutatingClosureRetain = Closure.Action(mutatingContext, (ref int context) =>
 mutatingClosureRetain.Invoke(); // Output: 10, 15
 console.WriteLine($"{mutatingClosureRetain.Context}"); // Output: 15
 
-// Example of MutatingContextBehaviour.Reset
+// Example of MutatingClosureBehaviour.Reset
 var mutatingContext = 10;
 var mutatingClosureReset = Closure.Action(mutatingContext, (ref int context) => {
     Console.WriteLine($"{context}");
