@@ -9,10 +9,23 @@ public interface IMutatingClosure {
     MutatingClosureBehaviour MutatingBehaviour { get; set; }
 }
 
+public interface IClosure {
+    
+}
+public interface IClosure<TContext> : IClosure {
+    TContext Context { get; set; }
+}
+
+public interface IClosure<TContext, TDelegate> : IClosure<TContext> where TDelegate : Delegate {
+    TDelegate Delegate { get; set; }
+    void Add(TDelegate action);
+    void Remove(TDelegate action);
+}
+
 /// <summary>
 /// Provides factory methods for creating closure structs that encapsulate context and delegate logic.
 /// </summary>
-public static partial class Closure {
+public partial struct Closure {
     /// <summary> Creates an <see cref="ClosureAction{TContext}"/> with the specified context and action. </summary>
     public static ClosureAction<TContext> Action<TContext>(TContext context, Action<TContext> action) =>
         CreateAction<TContext, Action<TContext>, ClosureAction<TContext>>(context, action);
@@ -50,7 +63,7 @@ public static partial class Closure {
         new RefClosureRefAction<TContext, TArg>(ref context, action);
 }
 
-public static partial class Closure {
+public partial struct Closure {
     /// <summary> Creates a <see cref="ClosureFunc{TContext, TResult}"/> with the specified context and function. </summary>
     public static ClosureFunc<TContext, TResult> Func<TContext, TResult>(TContext context, Func<TContext, TResult> func) =>
         CreateFunc<TContext, TResult, Func<TContext, TResult>, ClosureFunc<TContext, TResult>>(context, func);

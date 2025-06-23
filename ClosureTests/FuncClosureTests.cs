@@ -123,9 +123,9 @@ namespace ClosureTests {
             }
 
             var closure = Closure.Func(context, Handler);
-            closure.AddFunc(Handler);
+            closure.Add(Handler);
             int result = closure.Invoke();
-            closure.RemoveFunc(Handler);
+            closure.Remove(Handler);
             int result2 = closure.Invoke();
 
             Assert.Multiple(() => {
@@ -148,9 +148,9 @@ namespace ClosureTests {
             }
 
             var closure = Closure.Func<int, int, int>(context, Handler);
-            closure.AddFunc(Handler);
+            closure.Add(Handler);
             int result = closure.Invoke(ref arg);
-            closure.RemoveFunc(Handler);
+            closure.Remove(Handler);
             int result2 = closure.Invoke(ref arg);
 
             Assert.Multiple(() => {

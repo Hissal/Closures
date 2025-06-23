@@ -32,7 +32,7 @@ public class ActionClosureCreationTests {
         Assert.Multiple(() => {
             Assert.That(closure, Is.InstanceOf<IClosureAction<int, Action<int>>>());
             Assert.That(closure.Context, Is.EqualTo(context));
-            Assert.That(closure.Action, Is.EqualTo(action));
+            Assert.That(closure.Delegate, Is.EqualTo(action));
         });
     }
 
@@ -45,7 +45,7 @@ public class ActionClosureCreationTests {
         Assert.Multiple(() => {
             Assert.That(closure, Is.InstanceOf<IClosureAction<int, int, Action<int, int>>>());
             Assert.That(closure.Context, Is.EqualTo(context));
-            Assert.That(closure.Action, Is.EqualTo(action));
+            Assert.That(closure.Delegate, Is.EqualTo(action));
         });
     }
 
@@ -58,7 +58,7 @@ public class ActionClosureCreationTests {
         Assert.Multiple(() => {
             Assert.That(closure, Is.InstanceOf<IClosureAction<int, int, RefActionWithNormalContext<int, int>>>());
             Assert.That(closure.Context, Is.EqualTo(context));
-            Assert.That(closure.Action, Is.EqualTo(action));
+            Assert.That(closure.Delegate, Is.EqualTo(action));
         });
     }
 
@@ -71,7 +71,7 @@ public class ActionClosureCreationTests {
         Assert.Multiple(() => {
             Assert.That(closure, Is.InstanceOf<IClosureAction<int, RefAction<int>>>());
             Assert.That(closure.Context, Is.EqualTo(context));
-            Assert.That(closure.Action, Is.EqualTo(action));
+            Assert.That(closure.Delegate, Is.EqualTo(action));
         });
     }
 
@@ -84,7 +84,7 @@ public class ActionClosureCreationTests {
         Assert.Multiple(() => {
             Assert.That(closure, Is.InstanceOf<IClosureAction<int, int, ActionWithRefContext<int, int>>>());
             Assert.That(closure.Context, Is.EqualTo(context));
-            Assert.That(closure.Action, Is.EqualTo(action));
+            Assert.That(closure.Delegate, Is.EqualTo(action));
         });
     }
 
@@ -97,7 +97,7 @@ public class ActionClosureCreationTests {
         Assert.Multiple(() => {
             Assert.That(closure, Is.InstanceOf<IClosureAction<int, int, RefAction<int, int>>>());
             Assert.That(closure.Context, Is.EqualTo(context));
-            Assert.That(closure.Action, Is.EqualTo(action));
+            Assert.That(closure.Delegate, Is.EqualTo(action));
         });
     }
 
@@ -109,7 +109,7 @@ public class ActionClosureCreationTests {
         
         Assert.That(closure.Context, Is.EqualTo(context));
         Assert.That(closure.RefContext, Is.EqualTo(context));
-        Assert.That(closure.Action, Is.EqualTo(action));
+        Assert.That(closure.Delegate, Is.EqualTo(action));
     }
     
     [Test]
@@ -120,7 +120,7 @@ public class ActionClosureCreationTests {
         
         Assert.That(closure.Context, Is.EqualTo(context));
         Assert.That(closure.RefContext, Is.EqualTo(context));
-        Assert.That(closure.Action, Is.EqualTo(action));
+        Assert.That(closure.Delegate, Is.EqualTo(action));
     }
     
     [Test]
@@ -131,6 +131,6 @@ public class ActionClosureCreationTests {
 
         Assert.That(closure.Context, Is.EqualTo(context));
         Assert.That(closure.RefContext, Is.EqualTo(context));
-        Assert.That(closure.Action, Is.EqualTo(action));
+        Assert.That(closure.Delegate, Is.EqualTo(action));
     }
 }
