@@ -25,4 +25,8 @@
       <ProjectReference Include="..\Closures\Closures.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="FuncTests\RefClosureFuncs\" />
+    </ItemGroup>
+
 </Project>
