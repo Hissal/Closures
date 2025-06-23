@@ -152,7 +152,7 @@ var mutatingClosureRetain = Closure.Action(mutatingContext, (ref int context) =>
     Console.WriteLine($"{context}");
     context += 5
     Console.WriteLine($"{context}");
-}, MutatingContextBehaviour.Retain);
+}, MutatingClosureBehaviour.Retain);
 
 mutatingClosureRetain.Invoke(); // Output: 10, 15
 console.WriteLine($"{mutatingClosureRetain.Context}"); // Output: 15
@@ -163,7 +163,7 @@ var mutatingClosureReset = Closure.Action(mutatingContext, (ref int context) => 
     Console.WriteLine($"{context}");
     context += 5
     Console.WriteLine($"{context}");
-}, MutatingContextBehaviour.Reset);
+}, MutatingClosureBehaviour.Reset);
 
 mutatingClosureReset.Invoke(); // Output: 10, 15
 Console.WriteLine($"{mutatingClosureReset.Context}"); // Output: 10
