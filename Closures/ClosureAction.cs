@@ -1,49 +1,5 @@
 ﻿namespace Lh.Closures;
 
-public partial struct Closure {
-    public static TClosure Create<TContext, TDelegate, TClosure>(TContext context, TDelegate del)
-        where TClosure : struct, IClosure<TContext, TDelegate> where TDelegate : Delegate {
-        return new TClosure {
-            Context = context,
-            Delegate = del
-        };
-    }    
-    
-    public static TClosure CreateAction<TContext, TAction, TClosure>(TContext context, TAction action)
-        where TClosure : struct, IClosureAction<TContext, TAction>
-        where TAction : Delegate 
-        => new TClosure() {
-            Delegate = action,
-            Context = context
-        };
-
-    public static TClosure CreateAction<TContext, TArg, TAction, TClosure>(TContext context, TAction action)
-        where TClosure : struct, IClosureAction<TContext, TArg, TAction>
-        where TAction : Delegate
-        => new TClosure() {
-            Delegate = action,
-            Context = context
-        };
-    
-    public static TClosure CreateAction<TContext, TAction, TClosure>(TContext context, TAction action, MutatingClosureBehaviour mutatingBehaviour)
-        where TClosure : struct, IClosureAction<TContext, TAction>, IMutatingClosure
-        where TAction : Delegate 
-        => new TClosure() {
-            Delegate = action,
-            Context = context,
-            MutatingBehaviour = mutatingBehaviour
-        };
-
-    public static TClosure CreateAction<TContext, TArg, TAction, TClosure>(TContext context, TAction action, MutatingClosureBehaviour mutatingBehaviour)
-        where TClosure : struct, IClosureAction<TContext, TArg, TAction>, IMutatingClosure
-        where TAction : Delegate
-        => new TClosure() {
-            Delegate = action,
-            Context = context,
-            MutatingBehaviour = mutatingBehaviour
-        };
-}
-
 public interface IAction {
     void Invoke();
 }

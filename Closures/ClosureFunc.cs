@@ -1,40 +1,7 @@
 ﻿namespace Lh.Closures;
 
 public partial struct Closure {
-    public static TClosure CreateFunc<TContext, TResult, TFunc, TClosure>(TContext context, TFunc func)
-        where TClosure : struct, IClosureFunc<TContext, TResult, TFunc>
-        where TFunc : Delegate 
-        => new TClosure() {
-            Delegate = func,
-            Context = context
-        };
-    
-    public static TClosure CreateFunc<TContext, TArg, TResult, TFunc, TClosure>(TContext context, TFunc func)
-        where TClosure : struct, IClosureFunc<TContext, TArg, TResult, TFunc>
-        where TFunc : Delegate
-        => new TClosure() {
-            Delegate = func,
-            Context = context
-        };
-    
-    
-    public static TClosure CreateFunc<TContext, TResult, TFunc, TClosure>(TContext context, TFunc func, MutatingClosureBehaviour mutatingBehaviour)
-        where TClosure : struct, IClosureFunc<TContext, TResult, TFunc>, IMutatingClosure
-        where TFunc : Delegate
-        => new TClosure() {
-            Delegate = func,
-            Context = context,
-            MutatingBehaviour = mutatingBehaviour
-        };
-    
-    public static TClosure CreateFunc<TContext, TArg, TResult, TFunc, TClosure>(TContext context, TFunc func, MutatingClosureBehaviour mutatingBehaviour)
-        where TClosure : struct, IClosureFunc<TContext, TArg, TResult, TFunc>, IMutatingClosure
-        where TFunc : Delegate 
-        => new TClosure() {
-            Delegate = func,
-            Context = context,
-            MutatingBehaviour = mutatingBehaviour
-        };
+
 }
 
 public interface IFunc<out TResult> {
