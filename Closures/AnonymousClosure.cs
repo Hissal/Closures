@@ -14,26 +14,15 @@ public partial struct Closure {
     public static AnonymousClosure<TContext, TDelegate> Anonymous<TContext, TDelegate>(TContext context, TDelegate @delegate) 
         where TDelegate : Delegate 
         => Create<TContext, TDelegate, AnonymousClosure<TContext, TDelegate>>(context, @delegate);
-    
-    /// <summary>
-    /// Creates an anonymous closure that encapsulates a delegate and a context.
-    /// </summary>
-    /// <param name="context">The context to be captured.</param>
-    /// <param name="delegate">The delegate to be captured.</param>
-    /// <typeparam name="TContext">The type of the context.</typeparam>
-    /// <returns>An <see cref="AnonymousClosure{TContext}"/> containing the provided context and delegate.</returns>
-    public static AnonymousClosure<TContext> Anonymous<TContext>(TContext context, Delegate @delegate) 
-        => Create<TContext, Delegate, AnonymousClosure<TContext>>(context, @delegate);
 }
 
 public interface IAnonymousClosure : IClosure {
     
 }
-
-public interface IAnonymousClosure<TContext, TDelegate> : IClosure<TContext, TDelegate>, IAnonymousClosure where TDelegate : Delegate {
+public interface IAnonymousClosure<TContext> : IClosure<TContext>, IAnonymousClosure {
 
 }
-public interface IAnonymousClosure<TContext> : IAnonymousClosure<TContext, Delegate> {
+public interface IAnonymousClosure<TContext, TDelegate> : IClosure<TContext, TDelegate>, IAnonymousClosure<TContext> where TDelegate : Delegate {
 
 }
 
@@ -52,22 +41,6 @@ public struct AnonymousClosure<TContext, TDelegate> : IAnonymousClosure<TContext
 
     public void Add(TDelegate action) => Delegate = (TDelegate)System.Delegate.Combine(Delegate, action);
     public void Remove(TDelegate action) => Delegate = (TDelegate)System.Delegate.Remove(Delegate, action);
-}
-
-/// <summary>
-/// An anonymous closure must be manually invoked using the Delegate and Context
-/// </summary>
-public struct AnonymousClosure<TContext> : IAnonymousClosure<TContext> {
-    public Delegate Delegate { get; set; }
-    public TContext Context { get; set; }
-    
-    public AnonymousClosure(TContext context, Delegate @delegate) {
-        Context = context;
-        Delegate = @delegate;
-    }
-    
-    public void Add(Delegate action) => Delegate = Delegate.Combine(Delegate, action);
-    public void Remove(Delegate action) => Delegate = Delegate.Remove(Delegate, action);
 }
 
 public static class AnonymousClosureExtensions {

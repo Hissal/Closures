@@ -28,7 +28,7 @@ in a lambda expression shows significant improvements in execution time and memo
 - [Basic Closures](#basic-closures)
 - [Mutating Closures](#mutating-closures)
 - [Ref Closures](#ref-closures)
-- 
+- [Anonymous Closures](#anonymous-closures)
 
 ## Why?
 Due to the nature of closures, 
@@ -317,7 +317,6 @@ Console.WriteLine(mutatableInt); // Output: 100
 ### Anonymous Closures
 - `AnonymousClosure<TContext, TDelegate>`: Captures a context of type `TContext` and a delegate of type `TDelegate` allowing for any type of custom delegates.
   <br><br>
-- `AnonymousClosure<TContext>`: Captures a context of type `TContext` and is created with `Delegate` as the delegate type.
 
 ## License
 This project is licensed under the MIT License.
