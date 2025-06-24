@@ -39,7 +39,9 @@
 - ModifiesOriginalContext
 - ModifiesOriginalContext_MultipleDelegates
 - ModifiesOriginalContext_MultipleInvocations
+- ModifyingContext_ModifiesOriginalContext
 - ModifyingOriginalContext_ModifiesContextAndRefContext
+- AssigningRefContextToAnotherVariable_AndModifyingIt_ModifiesContext
 
 ## Func closure tests
 **Each one of these must be tested on all types of closure funcs**

@@ -30,18 +30,18 @@ public interface IClosure<TContext, TDelegate> : IClosure<TContext> where TDeleg
 /// Provides factory methods for creating closure structs that encapsulate context and delegate logic.
 /// </summary>
 public partial struct Closure {
-    public static TClosure Create<TContext, TDelegate, TClosure>(TContext context, TDelegate del)
+    public static TClosure Create<TContext, TDelegate, TClosure>(TContext context, TDelegate @delegate)
         where TClosure : struct, IClosure<TContext, TDelegate> where TDelegate : Delegate 
         => new TClosure() {
-            Delegate = del,
+            Delegate = @delegate,
             Context = context
         };
 
-    public static TClosure Create<TContext, TDelegate, TClosure>(TContext context, TDelegate action, MutatingClosureBehaviour mutatingBehaviour)
+    public static TClosure Create<TContext, TDelegate, TClosure>(TContext context, TDelegate @delegate, MutatingClosureBehaviour mutatingBehaviour)
         where TClosure : struct, IClosure<TContext, TDelegate>, IMutatingClosure
         where TDelegate : Delegate 
         => new TClosure {
-            Delegate = action,
+            Delegate = @delegate,
             Context = context,
             MutatingBehaviour = mutatingBehaviour
         };
