@@ -19,12 +19,12 @@ public interface IClosure {
 public interface IClosure<TContext> : IClosure {
     TContext Context { get; set; }
 }
-
 public interface IClosure<TContext, TDelegate> : IClosure<TContext> where TDelegate : Delegate {
     TDelegate Delegate { get; set; }
     void Add(TDelegate action);
     void Remove(TDelegate action);
 }
+
 
 /// <summary>
 /// Provides factory methods for creating closure structs that encapsulate context and delegate logic.
