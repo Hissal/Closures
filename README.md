@@ -28,6 +28,7 @@ in a lambda expression shows significant improvements in execution time and memo
 - [Basic Closures](#basic-closures)
 - [Mutating Closures](#mutating-closures)
 - [Ref Closures](#ref-closures)
+- 
 
 ## Why?
 Due to the nature of closures, 
@@ -207,6 +208,7 @@ Any closure can also accept an argument when invoked.
 
 ```csharp
 using Closures;
+
 // Example of ActionClosure with an argument
 var closureActionWithArg = Closure.Action(10, (int context, int arg) => Console.WriteLine($"Context {context}, Arg: {arg}"));
 closureActionWithArg.Invoke(5); // Output: Context: 10, Arg: 5
@@ -223,6 +225,7 @@ The argument can also be passed as ref, allowing the closure to modify the argum
 
 ```csharp
 using Closures;
+
 // Example of ActionClosure with an argument
 int arg = 5;
 var closureActionWithArg = Closure.Action(10, (int context, ref int arg) => arg = context);
@@ -240,6 +243,35 @@ var closureFuncWithArg = Closure.Func(10, (int context, ref int arg) => {
 var returnValue = closureFuncWithArg.Invoke(ref funcArg)
 Console.WriteLine(returnValue); // Output: 15
 Console.WriteLine(funcArg); // Output: 10
+```
+
+### Anonymous closures
+Anonymous closures are closures for delegates that do not have a known closure type. 
+Meaning they can be used with any delegate type, such as `Action`, `Func`, or custom delegates.
+Because of this they must be manually invoked using the `Delegate` and `Context` properties directly.
+
+```csharp
+using Closures;
+
+// Example of an anonymous closure
+var anonymousClosure = Closure.Anonymous(100, (int context) => Console.WriteLine($"Anonymous closure with context: {context}"));
+anonymousClosure.Delegate.Invoke(anonymousClosure.Context); // Output: Anonymous closure with context: 100
+```
+
+```csharp
+using Closures;
+
+// Example of an anonymous closure with unknown delegate type
+delegate void UnknownDelegate(int context, string message, ref int mutatableInt);
+
+var anonymousClosure = Closure.Anonymous(100, new UnknownDelegate((int context, string message, ref int mutatableInt) => {
+    Console.WriteLine($"Context: {context}, message: {message}, mutatableInt: {mutatableInt}");
+    mutatableInt = context;
+}));
+
+int mutatableInt = 1;
+anonymousClosure.Delegate.Invoke(anonymousClosure.Context, "Hello World!", ref mutatableInt); // Output: Context: 100, message: Hello World!, mutatableInt: 1
+Console.WriteLine(mutatableInt); // Output: 100
 ```
 
 ## Closure Types
@@ -281,6 +313,11 @@ Console.WriteLine(funcArg); // Output: 10
 - `RefClosureFunc<TContext, TArg, TResult>`: Captures a reference to a context variable and invokes a function with an argument, mutating the original variable.
   <br><br>
 - `RefClosureRefFunc<TContext, TArg, TResult>`: Captures a reference to a context variable and invokes a ref function with a ref argument, mutating both.
+
+### Anonymous Closures
+- `AnonymousClosure<TContext, TDelegate>`: Captures a context of type `TContext` and a delegate of type `TDelegate` allowing for any type of custom delegates.
+  <br><br>
+- `AnonymousClosure<TContext>`: Captures a context of type `TContext` and is created with `Delegate` as the delegate type.
 
 ## License
 This project is licensed under the MIT License.

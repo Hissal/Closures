@@ -1,4 +1,6 @@
-﻿namespace Lh.Closures;
+﻿using Lh.Closures.Reflection.Experimental;
+
+namespace Lh.Closures;
 
 public partial struct Closure {
     /// <summary>
@@ -11,10 +13,7 @@ public partial struct Closure {
     /// <returns>An <see cref="AnonymousClosure{TContext, TDelegate}"/> containing the provided context and delegate.</returns>
     public static AnonymousClosure<TContext, TDelegate> Anonymous<TContext, TDelegate>(TContext context, TDelegate @delegate) 
         where TDelegate : Delegate 
-        => new AnonymousClosure<TContext, TDelegate> {
-            Delegate = @delegate,
-            Context = context
-        };
+        => Create<TContext, TDelegate, AnonymousClosure<TContext, TDelegate>>(context, @delegate);
     
     /// <summary>
     /// Creates an anonymous closure that encapsulates a delegate and a context.
@@ -24,10 +23,7 @@ public partial struct Closure {
     /// <typeparam name="TContext">The type of the context.</typeparam>
     /// <returns>An <see cref="AnonymousClosure{TContext}"/> containing the provided context and delegate.</returns>
     public static AnonymousClosure<TContext> Anonymous<TContext>(TContext context, Delegate @delegate) 
-        => new AnonymousClosure<TContext> {
-            Delegate = @delegate,
-            Context = context
-        };
+        => Create<TContext, Delegate, AnonymousClosure<TContext>>(context, @delegate);
 }
 
 public interface IAnonymousClosure : IClosure {
@@ -76,42 +72,45 @@ public struct AnonymousClosure<TContext> : IAnonymousClosure<TContext> {
 
 public static class AnonymousClosureExtensions {
     /// <summary>
-    /// Creates an anonymous closure from an existing closure.
+    /// Converts an existing closure to an anonymous closure.
     /// </summary>
     /// <param name="closure">The closure to make anonymous.</param>
     /// <typeparam name="TContext">The type of context used.</typeparam>
     /// <typeparam name="TDelegate">The type of delegate used.</typeparam>
     /// <returns>An <see cref="AnonymousClosure{TContext,TDelegate}"/></returns>
-    /// <remarks>This will box the closure as it has to convert to <see cref="IClosure{TContext, TDelegate}"/> from a value type.</remarks>
-    public static AnonymousClosure<TContext, TDelegate> ToAnonymousClosure<TContext, TDelegate>(this IClosure<TContext, TDelegate> closure) 
+    /// <remarks>
+    /// This will box the closure as it has to convert to <see cref="IClosure{TContext, TDelegate}"/> from a value type.<br></br>
+    /// Specify the type of closure you are converting to avoid this <see cref="AsAnonymous{TContext,TDelegate,TClosure}"/>
+    /// </remarks>
+    public static AnonymousClosure<TContext, TDelegate> ToAnonymous<TContext, TDelegate>(this IClosure<TContext, TDelegate> closure) 
         where TDelegate : Delegate 
-        => Closure.Anonymous(closure.Context, closure.Delegate);
+        => ClosureConverter.ConvertToAnonymous(closure);
 
     /// <summary>
-    /// Creates an anonymous closure from an existing closure.
+    /// Converts an existing closure to an anonymous closure.
     /// </summary>
     /// <param name="closure">The closure to make anonymous.</param>
     /// <typeparam name="TContext">The type of context used.</typeparam>
     /// <typeparam name="TDelegate">The type of delegate used.</typeparam>
     /// <typeparam name="TClosure">The type of closure to convert.</typeparam>
     /// <returns>An <see cref="AnonymousClosure{TContext,TDelegate}"/></returns>
-    public static AnonymousClosure<TContext, TDelegate> AsAnonymousClosure<TContext, TDelegate, TClosure>(this TClosure closure) 
+    public static AnonymousClosure<TContext, TDelegate> AsAnonymous<TContext, TDelegate, TClosure>(this TClosure closure) 
         where TDelegate : Delegate 
         where TClosure :  IClosure<TContext, TDelegate>
-        => Closure.Anonymous(closure.Context, closure.Delegate);
+        => ClosureConverter.ConvertToAnonymous<TContext, TDelegate, TClosure>(closure);
 
     /// <summary>
-    /// Creates a closure of a specific type from an anonymous closure.
+    /// Creates a closure of a specified type from an anonymous closure.
     /// </summary>
-    /// <param name="closure">The anonymous closure to make typed.</param>
+    /// <param name="closure">The anonymous closure to convert.</param>
     /// <typeparam name="TContext">The type of context used.</typeparam>
     /// <typeparam name="TDelegate">The type of delegate used.</typeparam>
     /// <typeparam name="TClosure">The type of closure to convert to.</typeparam>
     /// <returns>A closure of the specified type</returns>
-    public static TClosure AsTypedClosure<TContext, TDelegate, TClosure>(this AnonymousClosure<TContext, TDelegate> closure) 
+    public static TClosure AsKnown<TContext, TDelegate, TClosure>(this AnonymousClosure<TContext, TDelegate> closure) 
         where TClosure : struct, IClosure<TContext, TDelegate>
         where TDelegate : Delegate 
-        => Closure.Create<TContext, TDelegate, TClosure>(closure.Context, closure.Delegate);
+        => ClosureConverter.Convert<TContext, TDelegate, TClosure>(closure);
     
     /// <summary>
     /// Invokes the delegate with the context.

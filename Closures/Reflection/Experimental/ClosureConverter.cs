@@ -3,25 +3,80 @@
 namespace Lh.Closures.Reflection.Experimental;
 
 public static class ClosureConverter {
-    public static bool TryConvertToTypedClosure<TAnonymousClosure, TConvertedClosure>(this TAnonymousClosure closure, out TConvertedClosure convertedClosure) 
-        where TAnonymousClosure : struct, IAnonymousClosure
+    static ClosureTypeResolver s_defaultResolver;
+
+    static ClosureConverter() {
+        s_defaultResolver ??= new ClosureTypeResolver();
+    }
+    
+    public static void SetDefaultClosureTypeResolver(ClosureTypeResolver resolver) => s_defaultResolver = resolver;
+    
+    
+    /// <summary>
+    /// Converts a closure to an anonymous closure.
+    /// </summary>
+    /// <param name="closure">The closure to make anonymous.</param>
+    /// <typeparam name="TContext">The type of context used.</typeparam>
+    /// <typeparam name="TDelegate">The type of delegate used.</typeparam>
+    /// <returns>An <see cref="AnonymousClosure{TContext,TDelegate}"/></returns>
+    /// <remarks>
+    /// This will box the closure as it has to convert to <see cref="IClosure{TContext, TDelegate}"/> from a value type. <br></br>
+    /// Specify the type of closure you are converting to avoid this <see cref="ConvertToAnonymous{TContext, TDelegate, TClosure}"/>
+    /// </remarks>
+    public static AnonymousClosure<TContext, TDelegate> ConvertToAnonymous<TContext, TDelegate>(IClosure<TContext, TDelegate> closure) 
+        where TDelegate : Delegate 
+        => new AnonymousClosure<TContext, TDelegate> {
+            Context = closure.Context,
+            Delegate = closure.Delegate
+        };
+    
+    /// <summary>
+    /// Converts a closure to an anonymous closure.
+    /// </summary>
+    /// <param name="closure">The closure to make anonymous.</param>
+    /// <typeparam name="TContext">The type of context used.</typeparam>
+    /// <typeparam name="TDelegate">The type of delegate used.</typeparam>
+    /// <typeparam name="TClosure">The type of closure to convert.</typeparam>
+    /// <returns>An <see cref="AnonymousClosure{TContext,TDelegate}"/></returns>
+    public static AnonymousClosure<TContext, TDelegate> ConvertToAnonymous<TContext, TDelegate, TClosure>(TClosure closure) 
+        where TDelegate : Delegate 
+        where TClosure :  IClosure<TContext, TDelegate>
+        => new AnonymousClosure<TContext, TDelegate> {
+            Context = closure.Context,
+            Delegate = closure.Delegate
+        };
+    
+    public static TConvertedClosure Convert<TContext, TDelegate, TConvertedClosure>(AnonymousClosure<TContext, TDelegate> anonymousClosure) 
+        where TConvertedClosure : struct, IClosure<TContext, TDelegate>
+        where TDelegate : Delegate 
+        => new TConvertedClosure() {
+            Context = anonymousClosure.Context,
+            Delegate = anonymousClosure.Delegate
+        };
+
+    public static bool TryConvert<TConvertedClosure>(IAnonymousClosure anonymousClosure, out TConvertedClosure convertedClosure, ClosureTypeResolver? resolver = null) 
         where TConvertedClosure : struct, IClosure {
         
+        var anonymousClosureType = anonymousClosure.GetType();
+        
         // Get the context and delegate properties from the closure
-        var context = typeof(TAnonymousClosure).GetProperty("Context")?.GetValue(closure, null);
-        var @delegate = typeof(TAnonymousClosure).GetProperty("Delegate")?.GetValue(closure, null);
+        var contextProperty = anonymousClosureType.GetProperty("Context")!;
+        var delegateProperty = anonymousClosureType.GetProperty("Delegate")!;
         
-        if (context is null || @delegate is null) {
-            convertedClosure = default;
-            return false;
-        }
-        
-        var conversionType = GetClosureTypeOrAnonymous(@delegate.GetType());
+        resolver ??= s_defaultResolver; // TODO: remove resolving since we know the type at compile time
+        var conversionType = resolver.Resolve(delegateProperty.PropertyType);
         
         if (typeof(TConvertedClosure).IsAssignableFrom(conversionType)) {
-            convertedClosure = new TConvertedClosure();
-            convertedClosure.GetType().GetProperty("Context")?.SetValue(convertedClosure, context, null);
-            convertedClosure.GetType().GetProperty("Delegate")?.SetValue(convertedClosure, @delegate, null);
+            var context = contextProperty.GetValue(anonymousClosure, null);
+            var @delegate = delegateProperty.GetValue(anonymousClosure, null);
+            
+            object boxed = new TConvertedClosure();
+            var closureType = typeof(TConvertedClosure);
+            closureType.GetProperty("Context")!.SetValue(boxed, context, null);
+            closureType.GetProperty("Delegate")!.SetValue(boxed, @delegate, null);
+
+            convertedClosure = (TConvertedClosure)boxed;
+            
             return true;
         }
         
@@ -29,12 +84,12 @@ public static class ClosureConverter {
         return false;
     }
     
-    public static bool TryConvertToTypedClosure<TContext, TDelegate>(this AnonymousClosure<TContext, TDelegate> closure, out IClosure<TContext, TDelegate>? convertedClosure) 
+    public static bool TryConvert<TContext, TDelegate>(AnonymousClosure<TContext, TDelegate> anonymousClosure, out IClosure<TContext, TDelegate> convertedClosure, ClosureTypeResolver? resolver = null) 
         where TDelegate : Delegate {
         
-        convertedClosure = null;
+        convertedClosure = new AnonymousClosure<TContext, TDelegate>(anonymousClosure.Context, anonymousClosure.Delegate);
         
-        if (!TryConvertToTypedClosure<AnonymousClosure<TContext, TDelegate>>(closure, out var anonymousToIClosure))
+        if (!TryConvert<AnonymousClosure<TContext, TDelegate>>(anonymousClosure, out var anonymousToIClosure, resolver))
             return false;
 
         if (anonymousToIClosure is not IClosure<TContext, TDelegate> converted)
@@ -44,19 +99,23 @@ public static class ClosureConverter {
         return true;
     }
 
-    static bool TryConvertToTypedClosure<TClosure>(this TClosure closure, out IClosure? convertedClosure)
-        where TClosure : struct, IClosure {
+    static bool TryConvert<TAnonymousClosure>(TAnonymousClosure closure, out IClosure? convertedClosure, ClosureTypeResolver? resolver = null)
+        where TAnonymousClosure : struct, IAnonymousClosure {
         
         // Get the context and delegate properties from the closure
-        var context = typeof(TClosure).GetProperty("Context")?.GetValue(closure, null);
-        var @delegate = typeof(TClosure).GetProperty("Delegate")?.GetValue(closure, null);
+        var contextProperty = typeof(TAnonymousClosure).GetProperty("Context")!;
+        var delegateProperty = typeof(TAnonymousClosure).GetProperty("Delegate")!;
         
-        if (context is null || @delegate is null) {
+        var contextType = contextProperty.PropertyType;
+        var delegateType = delegateProperty.PropertyType;
+        
+        resolver ??= s_defaultResolver;
+        var conversionType = resolver.Resolve(delegateType);
+
+        if (typeof(IAnonymousClosure).IsAssignableFrom(conversionType)) {
             convertedClosure = null;
             return false;
         }
-        
-        var conversionType = GetClosureTypeOrAnonymous(@delegate.GetType());
         
         var method = typeof(Closure)
             .GetMethods(BindingFlags.Public | BindingFlags.Static)
@@ -65,83 +124,24 @@ public static class ClosureConverter {
                     && m.GetGenericArguments().Length == 3
                     && m.GetParameters().Length == 2 // or 3 for the overload with mutatingBehaviour
             );
-        
-        if (method is null) {
-            convertedClosure = null;
-            return false;
-        }
 
-        var genericMethod = method.MakeGenericMethod(context.GetType(), @delegate.GetType(), conversionType);
+#if DEBUG
+            if (method == null) {
+                throw new InvalidOperationException("Could not find the Create method in Closure.");
+            }
+#else
+            if (method == null) {
+                convertedClosure = null;
+                return false;
+            }
+#endif
+        
+        var context = contextProperty.GetValue(closure, null);
+        var @delegate = delegateProperty.GetValue(closure, null);
+
+        var genericMethod = method.MakeGenericMethod(contextType, delegateType, conversionType);
         convertedClosure = (IClosure?)genericMethod.Invoke(null, [context, @delegate]);
         
         return convertedClosure != null;
-    }
-    
-    public static Type GetClosureTypeOrAnonymous(Type delegateType) {
-        var genericArgs = delegateType.GetGenericArguments();
-        
-        if (genericArgs.Length == 0)
-            throw new ArgumentException("Delegate type must have at least one generic argument.");
-        
-        var contextType = genericArgs[0];
-        var argType = genericArgs.Length > 1 ? genericArgs[1] : null;
-        
-        if (contextType == null || delegateType == null)
-            throw new ArgumentNullException(nameof(contextType), "delegate type and context (first argument) of the delegate type must not be null.");
-        
-        var genericArgumentCount = argType is null ? 2 : 3;
-        
-        // Check if the delegate has an argument
-        var method = typeof(ClosureConverter).GetMethod(nameof(GetClosureTypeOrAnonymous),
-            genericArgumentCount,
-            BindingFlags.Public | BindingFlags.Static, 
-            null, 
-            Type.EmptyTypes, 
-            null
-        );
-
-#if DEBUG
-        if (method is null) {
-            throw new InvalidOperationException("Method GetClosureTypeOrAnonymous with 3 generic arguments not found.");
-        }
-#else
-        if (methodWithArg is null) 
-            return AnonymousClosureType();
-#endif
-        
-        var genericMethod = method.MakeGenericMethod(contextType, delegateType);
-        var type = (Type?)genericMethod.Invoke(null, null);
-        
-        if (type is not null)
-            return type;
-        
-        // Return AnonymousClosure if no specific type is found
-        return AnonymousClosureType();
-        
-        Type AnonymousClosureType() => typeof(AnonymousClosure<,>).MakeGenericType(contextType, delegateType);
-    }
-    
-    public static Type GetClosureTypeOrAnonymous<TContext, TDelegate>() where TDelegate : Delegate {
-        if (typeof(TDelegate).IsGenericType is false)
-            return typeof(AnonymousClosure<TContext, TDelegate>);
-        
-        return typeof(TDelegate) switch {
-            { } type when type.GetGenericTypeDefinition() == typeof(Action<>) => typeof(ClosureAction<TContext>),
-            { } type when type.GetGenericTypeDefinition() == typeof(RefAction<>) => typeof(MutatingClosureAction<TContext>),
-            _ => typeof(AnonymousClosure<TContext, TDelegate>)
-        };
-    }
-    
-    public static Type GetClosureTypeOrAnonymous<TContext, TArg, TDelegate>() where TDelegate : Delegate {
-        if (typeof(TDelegate).IsGenericType is false)
-            return typeof(AnonymousClosure<TContext, TDelegate>);
-        
-        return typeof(TDelegate) switch {
-            { } type when type.GetGenericTypeDefinition() == typeof(Action<TContext, TArg>) => typeof(ClosureAction<TContext, TArg>),
-            { } type when type.GetGenericTypeDefinition() == typeof(RefActionWithNormalContext<TContext, TArg>) => typeof(ClosureRefAction<TContext, TArg>),
-            { } type when type.GetGenericTypeDefinition() == typeof(ActionWithRefContext<TContext, TArg>) => typeof(MutatingClosureAction<TContext, TArg>),
-            { } type when type.GetGenericTypeDefinition() == typeof(RefAction<TContext, TArg>) => typeof(MutatingClosureRefAction<TContext, TArg>),
-            _ => typeof(AnonymousClosure<TContext, TDelegate>)
-        };
     }
 }

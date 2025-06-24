@@ -7,7 +7,7 @@
         <Company>Lassi Harjaluoma</Company>
         <PackageId>Closures</PackageId>
         <RootNamespace>Lh.Closures</RootNamespace>
-        <Version>1.0.0-alpha2</Version>
+        <Version>1.0.0-alpha3</Version>
         <Title>Closures</Title>
         <Authors>Lassi Harjaluoma</Authors>
         <Description>Closure structs that capture a context and a delegate that is invoked with the given context.</Description>
@@ -23,18 +23,15 @@
 
         <AssemblyName>Lh.Closures</AssemblyName>
 
-        <PackageReleaseNotes>Closures are now created using: 
-            Closure.Action() &amp; Closure.Func()
+        <PackageReleaseNotes>Added Anonymous Closures
+Closure.Anonymous(context, delegate);
+Anonymous closurees can be used with any type of delegate but must be manually invoked using:
+anonymousClosure.Delegate.Invoke()
 
-Changed names of closure types - Main types are now:
-- Closure(Action/Func)
-- ClosureRef(Action/Func)
-- MutatingClosure(Action/Func)
-- MutatingClosureRef(Action/Func)
-- RefClosure(Action/Func)
-- RefClosureRef(Action/Func)
+Any closure can be converted to an anonymous closure using:
+closure.ToAnonymous() or closure.AsAnonymous&lt;TContext, TDelegate, TClosure&gt;()
 
-Added MutatingClosureBehaviour enum which controls whether the context inside a mutating closure is Retained or Reset after invocation.</PackageReleaseNotes>
+Anonymous closures can be converted back to a known one with: anonymousClosure.AsKnown&lt;TContext, TDelegate, TClosure&gt;() or by using ClosureConverter.TryConvert(anonymousClosure)</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
