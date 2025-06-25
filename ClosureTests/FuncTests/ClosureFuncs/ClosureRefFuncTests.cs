@@ -20,7 +20,7 @@ public class ClosureRefFuncTests {
             Assert.That(ctx, Is.EqualTo(expected));
             return ctx;
         });
-        closure.Invoke(ref arg);
+        closure.Invoke(arg);
     }
 
     [Test]
@@ -30,7 +30,7 @@ public class ClosureRefFuncTests {
         int arg = 1;
 
         var closure = Closure.Func((testContext, expected), ((TestClass testContext, int expected) ctx, ref int a) => ctx.testContext.Value = ctx.expected);
-        closure.Invoke(ref arg);
+        closure.Invoke(arg);
         Assert.That(testContext.Value, Is.EqualTo(expected));
     }
 
@@ -43,9 +43,9 @@ public class ClosureRefFuncTests {
 
         var closure = Closure.Func<int, int, int>(context, Handler);
         closure.Add(Handler);
-        closure.Invoke(ref arg);
+        closure.Invoke(arg);
         closure.Remove(Handler);
-        closure.Invoke(ref arg);
+        closure.Invoke(arg);
 
         Assert.That(callSum, Is.EqualTo(3 * (context + arg)));
     }
@@ -64,7 +64,7 @@ public class ClosureRefFuncTests {
         for (int i = 0; i < actionCount - 1; i++) {
             closure.Add(Handler);
         }
-        closure.Invoke(ref arg);
+        closure.Invoke(arg);
 
         Assert.That(callSum, Is.EqualTo(actionCount * (context + arg)));
     }
@@ -91,7 +91,7 @@ public class ClosureRefFuncTests {
         for (int i = 0; i < actionCount - amountToCall; i++) {
             closure.Remove(Handler);
         }
-        closure.Invoke(ref arg);
+        closure.Invoke(arg);
 
         // Assert that the call sum is equal to the remaining funcs times the context plus the argument
         Assert.That(callSum, Is.EqualTo(amountToCall * expectedPerCall));
@@ -113,6 +113,19 @@ public class ClosureRefFuncTests {
     }
     
     // Ref argument tests
+    
+    [Test]
+    public void ClosureRefFunc_ReceivesRefArg() {
+        int context = 5;
+        int arg = 2;
+        int expected = context + arg;
+            
+        var closure = Closure.Func(context, (int ctx, ref int a) => {
+            Assert.That(ctx + a, Is.EqualTo(expected));
+            return ctx;
+        });
+        closure.Invoke(ref arg);
+    }
     
     [Test]
     public void ClosureRefFunc_ModifiesRefArgValue() {

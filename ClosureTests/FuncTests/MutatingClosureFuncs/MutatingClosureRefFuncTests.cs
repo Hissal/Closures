@@ -15,7 +15,7 @@ public class MutatingClosureRefFuncTests {
         int arg = 7;
         int expected = 5;
         var closure = Closure.Func(context, (ref int ctx, ref int a) => { Assert.That(ctx, Is.EqualTo(expected)); return ctx; });
-        closure.Invoke(ref arg);
+        closure.Invoke(arg);
     }
 
     [Test]
@@ -24,7 +24,7 @@ public class MutatingClosureRefFuncTests {
         int expected = 5;
         int arg = 1;
         var closure = Closure.Func((testContext, expected), (ref (TestClass testContext, int expected) ctx, ref int a) => ctx.testContext.Value = ctx.expected);
-        closure.Invoke(ref arg);
+        closure.Invoke(arg);
         Assert.That(testContext.Value, Is.EqualTo(expected));
     }
 
@@ -36,9 +36,9 @@ public class MutatingClosureRefFuncTests {
         int Handler(ref int ctx, ref int a) => callSum += ctx + a;
         var closure = Closure.Func<int, int, int>(context, Handler);
         closure.Add(Handler);
-        closure.Invoke(ref arg);
+        closure.Invoke(arg);
         closure.Remove(Handler);
-        closure.Invoke(ref arg);
+        closure.Invoke(arg);
         Assert.That(callSum, Is.EqualTo(3 * (context + arg)));
     }
 
@@ -51,7 +51,7 @@ public class MutatingClosureRefFuncTests {
         int Handler(ref int ctx, ref int a) => callSum += ctx + a;
         var closure = Closure.Func<int, int, int>(context, Handler);
         for (int i = 0; i < actionCount - 1; i++) closure.Add(Handler);
-        closure.Invoke(ref arg);
+        closure.Invoke(arg);
         Assert.That(callSum, Is.EqualTo(actionCount * (context + arg)));
     }
 
@@ -67,7 +67,7 @@ public class MutatingClosureRefFuncTests {
         var closure = Closure.Func<int, int, int>(context, Handler);
         for (int i = 0; i < actionCount - 1; i++) closure.Add(Handler);
         for (int i = 0; i < actionCount - amountToCall; i++) closure.Remove(Handler);
-        closure.Invoke(ref arg);
+        closure.Invoke(arg);
         Assert.That(callSum, Is.EqualTo(amountToCall * expectedPerCall));
     }
 
@@ -77,11 +77,26 @@ public class MutatingClosureRefFuncTests {
         int context = 5;
         int arg = 2;
         int expected = context + arg;
-        var closure = Closure.Func(context, (ref int ctx, ref int a) => { Assert.That(ctx + a, Is.EqualTo(expected)); return ctx; });
-        closure.Invoke(ref arg);
+        var closure = Closure.Func(context, (ref int ctx, ref int a) => {
+            Assert.That(ctx + a, Is.EqualTo(expected)); 
+            return ctx;
+        });
+        closure.Invoke(arg);
     }
 
     // Ref argument tests
+    [Test]
+    public void MutatingClosureRefFunc_ReceivesRefArg() {
+        int context = 5;
+        int arg = 2;
+        int expected = context + arg;
+        var closure = Closure.Func(context, (ref int ctx, ref int a) => {
+            Assert.That(ctx + a, Is.EqualTo(expected)); 
+            return ctx;
+        });
+        closure.Invoke(ref arg);
+    }
+    
     [Test]
     public void MutatingClosureRefFunc_ModifiesRefArgValue() {
         int context = 5;
@@ -122,7 +137,7 @@ public class MutatingClosureRefFuncTests {
         int addition = 3;
         int expected = context + addition;
         var closure = Closure.Func(context, (ref int ctx, ref int arg) => ctx += arg, MutatingClosureBehaviour.Retain);
-        closure.Invoke(ref addition);
+        closure.Invoke(addition);
         Assert.That(closure.Context, Is.EqualTo(expected));
     }
 
@@ -132,7 +147,7 @@ public class MutatingClosureRefFuncTests {
         int addition = 3;
         int expected = context;
         var closure = Closure.Func(context, (ref int ctx, ref int arg) => ctx += arg, MutatingClosureBehaviour.Reset);
-        closure.Invoke(ref addition);
+        closure.Invoke(addition);
         Assert.That(closure.Context, Is.EqualTo(expected));
     }
 
@@ -143,7 +158,7 @@ public class MutatingClosureRefFuncTests {
         int addition = 5;
         int expected = context + addition;
         var closure = Closure.Func(context, (ref int ctx, ref int arg) => ctx + arg);
-        int result = closure.Invoke(ref addition);
+        int result = closure.Invoke(addition);
         Assert.That(result, Is.EqualTo(expected));
     }
 }

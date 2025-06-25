@@ -1,14 +1,16 @@
 ﻿using Lh.Closures;
-using Lh.Closures.Reflection.Experimental;
+using Lh.Closures.Converting.Experimental;
 
 namespace ClosureTests.ReflectionTests;
 
 [TestFixture]
-public class RandomTesting {
+public class AnonymousTryConvertTests {
     delegate void UnknownDelegate<in TContext>(TContext ctx);
     struct UnknownClosure<TContext> : IClosure<TContext, UnknownDelegate<TContext>> {
         public TContext Context { get; set; }
         public UnknownDelegate<TContext> Delegate { get; set; }
+        public bool DelegateIsNull => Delegate is null;
+
         public void Add(UnknownDelegate<TContext> action) {
             // noop
         }
@@ -22,7 +24,7 @@ public class RandomTesting {
         var closure = Lh.Closures.Closure.Action(10, ctx => { /* Do something with ctx */ });
         var anonymous = closure.ToAnonymous();
 
-        var success = ClosureConverter.TryConvert(anonymous, out var converted);
+        var success = ReflectionClosureConverter.TryConvert(anonymous, out var converted);
         
         Assert.Multiple(() => {
             Assert.That(converted, Is.EqualTo(closure), "Converted closure should match the original closure");
@@ -37,7 +39,7 @@ public class RandomTesting {
         var closure = Lh.Closures.Closure.Action(10, (int ctx, int arg) => { /* Do something with ctx */ });
         var anonymous = closure.ToAnonymous();
         
-        var success = ClosureConverter.TryConvert(anonymous, out var converted);
+        var success = ReflectionClosureConverter.TryConvert(anonymous, out var converted);
         
         Assert.Multiple(() => {
             Assert.That(converted, Is.EqualTo(closure), "Converted closure should match the original closure");
@@ -52,7 +54,7 @@ public class RandomTesting {
         var closure = Lh.Closures.Closure.Action(10, (ref int ctx) => { /* Do something with ctx */ });
         var anonymous = closure.ToAnonymous();
         
-        var success = ClosureConverter.TryConvert(anonymous, out var converted);
+        var success = ReflectionClosureConverter.TryConvert(anonymous, out var converted);
         
         Assert.Multiple(() => {
             Assert.That(converted, Is.EqualTo(closure), "Converted closure should match the original closure");
@@ -67,7 +69,7 @@ public class RandomTesting {
         var closure = Lh.Closures.Closure.Action(10, (ref int ctx, int arg) => { /* Do something with ctx */ });
         var anonymous = closure.ToAnonymous();
         
-        var success = ClosureConverter.TryConvert(anonymous, out var converted);
+        var success = ReflectionClosureConverter.TryConvert(anonymous, out var converted);
         
         Assert.Multiple(() => {
             Assert.That(converted, Is.EqualTo(closure), "Converted closure should match the original closure");
@@ -82,7 +84,7 @@ public class RandomTesting {
         var closure = Lh.Closures.Closure.Func(10, ctx => ctx + 1);
         var anonymous = closure.ToAnonymous();
         
-        var success = ClosureConverter.TryConvert(anonymous, out var converted);
+        var success = ReflectionClosureConverter.TryConvert(anonymous, out var converted);
         
         Assert.Multiple(() => {
             Assert.That(converted, Is.EqualTo(closure), "Converted closure should match the original closure");
@@ -97,7 +99,7 @@ public class RandomTesting {
         var closure = Lh.Closures.Closure.Func(10, (int ctx, int arg) => ctx + arg);
         var anonymous = closure.ToAnonymous();
         
-        var success = ClosureConverter.TryConvert(anonymous, out var converted);
+        var success = ReflectionClosureConverter.TryConvert(anonymous, out var converted);
         
         Assert.Multiple(() => {
             Assert.That(converted, Is.EqualTo(closure), "Converted closure should match the original closure");
@@ -112,7 +114,7 @@ public class RandomTesting {
         var closure = Lh.Closures.Closure.Func(10, (ref int ctx) => ctx + 1);
         var anonymous = closure.ToAnonymous();
         
-        var success = ClosureConverter.TryConvert(anonymous, out var converted);
+        var success = ReflectionClosureConverter.TryConvert(anonymous, out var converted);
         
         Assert.Multiple(() => {
             Assert.That(converted, Is.EqualTo(closure), "Converted closure should match the original closure");
@@ -127,7 +129,7 @@ public class RandomTesting {
         var closure = Lh.Closures.Closure.Func(10, (ref int ctx, int arg) => ctx + arg);
         var anonymous = closure.ToAnonymous();
         
-        var success = ClosureConverter.TryConvert(anonymous, out var converted);
+        var success = ReflectionClosureConverter.TryConvert(anonymous, out var converted);
         
         Assert.Multiple(() => {
             Assert.That(converted, Is.EqualTo(closure), "Converted closure should match the original closure");
@@ -142,7 +144,7 @@ public class RandomTesting {
         var unknownClosure = new UnknownClosure<int>();
         var anonymous = unknownClosure.ToAnonymous();
         
-        var success = ClosureConverter.TryConvert(anonymous, out var converted);
+        var success = ReflectionClosureConverter.TryConvert(anonymous, out var converted);
         
         Assert.Multiple(() => {
             Assert.That(converted, Is.EqualTo(anonymous), "Converted closure should match the anonymous closure");

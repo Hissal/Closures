@@ -3,7 +3,7 @@
 namespace ClosureTests.ActionTests;
 
 [TestFixture]
-public class ActionClosureCreationTests {
+public class ClosureActionCreationTests {
     public void DummyAction(int context) { }
     public void DummyActionWithArg(int context, int arg) { }
     public void DummyActionWithRefArg(int context, ref int arg) { }

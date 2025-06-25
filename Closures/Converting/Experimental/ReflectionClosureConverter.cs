@@ -1,58 +1,21 @@
 ﻿using System.Reflection;
 
-namespace Lh.Closures.Reflection.Experimental;
+namespace Lh.Closures.Converting.Experimental;
 
-public static class ClosureConverter {
-    static ClosureTypeResolver s_defaultResolver;
-
-    static ClosureConverter() {
-        s_defaultResolver ??= new ClosureTypeResolver();
-    }
+/// <summary>
+/// Reflection based converter for anonymous closures.
+/// </summary>
+/// <remarks>
+/// <b>Warning:</b> This is an experimental feature and may not be fully optimized or stable.
+/// It is also possible for this to receive major changes or be removed / renamed in the future causing breaking changes.
+/// Use with caution.
+/// </remarks>
+[Obsolete("Experimental feature, may change or be removed in the future.")]
+public static class ReflectionClosureConverter {
+    static ClosureTypeResolver? s_defaultResolver;
+    static ClosureTypeResolver DefaultResolver => s_defaultResolver ??= ClosureTypeResolver.DefaultResolver;
     
     public static void SetDefaultClosureTypeResolver(ClosureTypeResolver resolver) => s_defaultResolver = resolver;
-    
-    
-    /// <summary>
-    /// Converts a closure to an anonymous closure.
-    /// </summary>
-    /// <param name="closure">The closure to make anonymous.</param>
-    /// <typeparam name="TContext">The type of context used.</typeparam>
-    /// <typeparam name="TDelegate">The type of delegate used.</typeparam>
-    /// <returns>An <see cref="AnonymousClosure{TContext,TDelegate}"/></returns>
-    /// <remarks>
-    /// This will box the closure as it has to convert to <see cref="IClosure{TContext, TDelegate}"/> from a value type. <br></br>
-    /// Specify the type of closure you are converting to avoid this <see cref="ConvertToAnonymous{TContext, TDelegate, TClosure}"/>
-    /// </remarks>
-    public static AnonymousClosure<TContext, TDelegate> ConvertToAnonymous<TContext, TDelegate>(IClosure<TContext, TDelegate> closure) 
-        where TDelegate : Delegate 
-        => new AnonymousClosure<TContext, TDelegate> {
-            Context = closure.Context,
-            Delegate = closure.Delegate
-        };
-    
-    /// <summary>
-    /// Converts a closure to an anonymous closure.
-    /// </summary>
-    /// <param name="closure">The closure to make anonymous.</param>
-    /// <typeparam name="TContext">The type of context used.</typeparam>
-    /// <typeparam name="TDelegate">The type of delegate used.</typeparam>
-    /// <typeparam name="TClosure">The type of closure to convert.</typeparam>
-    /// <returns>An <see cref="AnonymousClosure{TContext,TDelegate}"/></returns>
-    public static AnonymousClosure<TContext, TDelegate> ConvertToAnonymous<TContext, TDelegate, TClosure>(TClosure closure) 
-        where TDelegate : Delegate 
-        where TClosure :  IClosure<TContext, TDelegate>
-        => new AnonymousClosure<TContext, TDelegate> {
-            Context = closure.Context,
-            Delegate = closure.Delegate
-        };
-    
-    public static TConvertedClosure Convert<TContext, TDelegate, TConvertedClosure>(AnonymousClosure<TContext, TDelegate> anonymousClosure) 
-        where TConvertedClosure : struct, IClosure<TContext, TDelegate>
-        where TDelegate : Delegate 
-        => new TConvertedClosure() {
-            Context = anonymousClosure.Context,
-            Delegate = anonymousClosure.Delegate
-        };
 
     public static bool TryConvert<TConvertedClosure>(IAnonymousClosure anonymousClosure, out TConvertedClosure convertedClosure, ClosureTypeResolver? resolver = null) 
         where TConvertedClosure : struct, IClosure {
@@ -63,7 +26,7 @@ public static class ClosureConverter {
         var contextProperty = anonymousClosureType.GetProperty("Context")!;
         var delegateProperty = anonymousClosureType.GetProperty("Delegate")!;
         
-        resolver ??= s_defaultResolver; // TODO: remove resolving since we know the type at compile time
+        resolver ??= DefaultResolver; // TODO: remove resolving since we know the type at compile time
         var conversionType = resolver.Resolve(delegateProperty.PropertyType);
         
         if (typeof(TConvertedClosure).IsAssignableFrom(conversionType)) {
@@ -109,7 +72,7 @@ public static class ClosureConverter {
         var contextType = contextProperty.PropertyType;
         var delegateType = delegateProperty.PropertyType;
         
-        resolver ??= s_defaultResolver;
+        resolver ??= DefaultResolver;
         var conversionType = resolver.Resolve(delegateType);
 
         if (typeof(IAnonymousClosure).IsAssignableFrom(conversionType)) {

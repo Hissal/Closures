@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 
-namespace Lh.Closures.Reflection.Experimental;
+namespace Lh.Closures.Converting.Experimental;
 
 public enum ClosureDelegateType {
     Unknown,
@@ -8,7 +8,20 @@ public enum ClosureDelegateType {
     Func,
 }
 
+/// <summary>
+/// Reflection based type resolver for resolving the type of closure from a delegate type
+/// </summary>
+/// <remarks>
+/// <b>Warning:</b> This is an experimental feature and may not be fully optimized or stable.
+/// It is also possible for this to receive major changes or be removed / renamed in the future causing breaking changes.
+/// Use with caution.
+/// </remarks>
+[Obsolete("Experimental feature, may change or be removed in the future.")]
 public class ClosureTypeResolver {
+    static ClosureTypeResolver? s_defaultResolver;
+    public static ClosureTypeResolver DefaultResolver => s_defaultResolver ??= new ClosureTypeResolver();
+
+    
     readonly Dictionary<Type, Type> delegateToClosureType = new ();
     
     public ClosureTypeResolver AddResolution<TDelegate, TClosure>() where TDelegate : Delegate where TClosure : IClosure => 
@@ -36,7 +49,7 @@ public class ClosureTypeResolver {
         if (!delegateType.IsGenericType)
             return ResolveUnknownType(delegateType);
 
-        return ResolveTypeOfDelegate(delegateType) switch {
+        return ResolveClosureDelegateType(delegateType) switch {
             ClosureDelegateType.Action => ResolveActionType(delegateType),
             ClosureDelegateType.Func => ResolveFuncType(delegateType),
             _ => ResolveUnknownType(delegateType)
@@ -195,10 +208,10 @@ public class ClosureTypeResolver {
         return typeof(AnonymousClosure<,>).MakeGenericType(genericArgs[0], delegateType);
     }
     
-    public static ClosureDelegateType ResolveTypeOfDelegate<TDelegate>() where TDelegate : Delegate => 
-        ResolveTypeOfDelegate(typeof(TDelegate));
+    public static ClosureDelegateType ResolveClosureDelegateType<TDelegate>() where TDelegate : Delegate => 
+        ResolveClosureDelegateType(typeof(TDelegate));
 
-    public static ClosureDelegateType ResolveTypeOfDelegate(Type delegateType) {
+    public static ClosureDelegateType ResolveClosureDelegateType(Type delegateType) {
         if (!delegateType.IsGenericType)
             return ClosureDelegateType.Unknown;
         
@@ -236,5 +249,16 @@ public class ClosureTypeResolver {
             throw new ArgumentException("Delegate type must have at least one generic argument to resolve context type.");
         
         return genericArgs[0];
+    }
+
+    public static bool IsOfType<TClosure>(IAnonymousClosure anonymousClosure) => 
+        IsOfType(typeof(TClosure), anonymousClosure);
+
+    public static bool IsOfType(Type closureType, IAnonymousClosure anonymousClosure,  ClosureTypeResolver? resolver = null) {
+        var delegateType = anonymousClosure.GetType().GetProperty("Delegate")?.PropertyType!;
+
+        resolver ??= DefaultResolver;
+        var type = resolver.Resolve(delegateType);
+        return closureType.IsAssignableFrom(type);
     }
 }

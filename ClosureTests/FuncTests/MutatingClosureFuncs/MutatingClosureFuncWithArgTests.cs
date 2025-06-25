@@ -72,6 +72,7 @@ public class MutatingClosureFuncWithArgTests {
     }
 
     // Argument tests
+    
     [Test]
     public void MutatingClosureFuncWithArg_ReceivesArg() {
         int context = 5;

@@ -1,8 +1,8 @@
-﻿namespace Lh.Closures;
+﻿#pragma warning disable CS8603 // Possible null reference return.
+#pragma warning disable CS8601 // Possible null reference assignment.
+// ReSharper disable ConvertToPrimaryConstructor
 
-public partial struct Closure {
-
-}
+namespace Lh.Closures;
 
 public interface IFunc<out TResult> {
     TResult Invoke();
@@ -28,6 +28,8 @@ public interface IClosureRefFunc<TContext, TArg, out TResult, TFunc> : IClosureF
 
 public struct ClosureFunc<TContext, TResult> : IClosureFunc<TContext, TResult, Func<TContext, TResult>> {
     public Func<TContext, TResult> Delegate { get; set; }
+    public bool DelegateIsNull => Delegate is null;
+    
     public TContext Context { get; set; }
 
     public ClosureFunc(TContext context, Func<TContext, TResult> func) {
@@ -38,11 +40,13 @@ public struct ClosureFunc<TContext, TResult> : IClosureFunc<TContext, TResult, F
     public void Add(Func<TContext, TResult> func) => Delegate += func;
     public void Remove(Func<TContext, TResult> func) => Delegate -= func;
 
-    public TResult Invoke() => Delegate.Invoke(Context);
+    public TResult Invoke() => DelegateIsNull ? default : Delegate.Invoke(Context);
 }
 
 public struct ClosureFunc<TContext, TArg, TResult> : IClosureFunc<TContext, TArg, TResult, Func<TContext, TArg, TResult>> {
     public Func<TContext, TArg, TResult> Delegate { get; set; }
+    public bool DelegateIsNull => Delegate is null;
+    
     public TContext Context { get; set; }
 
     public ClosureFunc(TContext context, Func<TContext, TArg, TResult> func) {
@@ -53,11 +57,13 @@ public struct ClosureFunc<TContext, TArg, TResult> : IClosureFunc<TContext, TArg
     public void Add(Func<TContext, TArg, TResult> func) => Delegate += func;
     public void Remove(Func<TContext, TArg, TResult> func) => Delegate -= func;
 
-    public TResult Invoke(TArg arg) => Delegate.Invoke(Context, arg);
+    public TResult Invoke(TArg arg) => DelegateIsNull ? default : Delegate.Invoke(Context, arg);
 }
 
 public struct ClosureRefFunc<TContext, TArg, TResult> : IClosureRefFunc<TContext, TArg, TResult, RefFuncWithNormalContext<TContext, TArg, TResult>> {
     public RefFuncWithNormalContext<TContext, TArg, TResult> Delegate { get; set; }
+    public bool DelegateIsNull => Delegate is null;
+    
     public TContext Context { get; set; }
 
     public ClosureRefFunc(TContext context, RefFuncWithNormalContext<TContext, TArg, TResult> func) {
@@ -68,13 +74,16 @@ public struct ClosureRefFunc<TContext, TArg, TResult> : IClosureRefFunc<TContext
     public void Add(RefFuncWithNormalContext<TContext, TArg, TResult> func) => Delegate += func;
     public void Remove(RefFuncWithNormalContext<TContext, TArg, TResult> func) => Delegate -= func;
     
-    public TResult Invoke(TArg arg) => Delegate.Invoke(Context, ref arg);
-    public TResult Invoke(ref TArg arg) => Delegate.Invoke(Context, ref arg);
+    public TResult Invoke(TArg arg) => Invoke(ref arg);
+    public TResult Invoke(ref TArg arg) => DelegateIsNull ? default : Delegate.Invoke(Context, ref arg);
 }
 
 public struct MutatingClosureFunc<TContext, TResult> : IClosureFunc<TContext, TResult, RefFunc<TContext, TResult>>, IMutatingClosure {
     public RefFunc<TContext, TResult> Delegate { get; set; }
+    public bool DelegateIsNull => Delegate is null;
+    
     public MutatingClosureBehaviour MutatingBehaviour { get; set; }
+    
     public TContext Context {
         get => context;
         set => context = value;
@@ -92,16 +101,19 @@ public struct MutatingClosureFunc<TContext, TResult> : IClosureFunc<TContext, TR
 
     public TResult Invoke() {
         if (MutatingBehaviour is MutatingClosureBehaviour.Retain) {
-            return Delegate.Invoke(ref context);
+            return DelegateIsNull ? default : Delegate.Invoke(ref context);
         }
         var copiedContext = context;
-        return Delegate.Invoke(ref copiedContext);
+        return DelegateIsNull ? default : Delegate.Invoke(ref copiedContext);
     }
 }
 
 public struct MutatingClosureFunc<TContext, TArg, TResult> : IClosureFunc<TContext, TArg, TResult, FuncWithRefContext<TContext, TArg, TResult>>, IMutatingClosure {
     public FuncWithRefContext<TContext, TArg, TResult> Delegate { get; set; }
+    public bool DelegateIsNull => Delegate is null;
+    
     public MutatingClosureBehaviour MutatingBehaviour { get; set; }
+    
     public TContext Context {
         get => context;
         set => context = value;
@@ -119,16 +131,19 @@ public struct MutatingClosureFunc<TContext, TArg, TResult> : IClosureFunc<TConte
 
     public TResult Invoke(TArg arg) {
         if (MutatingBehaviour is MutatingClosureBehaviour.Retain) {
-            return Delegate.Invoke(ref context, arg);
+            return DelegateIsNull ? default : Delegate.Invoke(ref context, arg);
         }
         var copiedContext = context;
-        return Delegate.Invoke(ref copiedContext, arg);
+        return DelegateIsNull ? default : Delegate.Invoke(ref copiedContext, arg);
     }
 }
 
 public struct MutatingClosureRefFunc<TContext, TArg, TResult> : IClosureRefFunc<TContext, TArg, TResult, RefFunc<TContext, TArg, TResult>>, IMutatingClosure {
     public RefFunc<TContext, TArg, TResult> Delegate { get; set; }
+    public bool DelegateIsNull => Delegate is null;
+    
     public MutatingClosureBehaviour MutatingBehaviour { get; set; }
+    
     public TContext Context {
         get => context;
         set => context = value;
@@ -146,16 +161,18 @@ public struct MutatingClosureRefFunc<TContext, TArg, TResult> : IClosureRefFunc<
 
     public TResult Invoke(ref TArg arg) {
         if (MutatingBehaviour is MutatingClosureBehaviour.Retain) {
-            return Delegate.Invoke(ref context, ref arg);
+            return DelegateIsNull ? default : Delegate.Invoke(ref context, ref arg);
         }
         var copiedContext = context;
-        return Delegate.Invoke(ref copiedContext, ref arg);
+        return DelegateIsNull ? default : Delegate.Invoke(ref copiedContext, ref arg);
     }
     public TResult Invoke(TArg arg) => Invoke(ref arg);
 }
 
 public ref struct RefClosureFunc<TContext, TResult> : IClosureFunc<TContext, TResult, RefFunc<TContext, TResult>>, IRefClosure<TContext> {
     public RefFunc<TContext, TResult> Delegate { get; set; }
+    public bool DelegateIsNull => Delegate is null;
+    
     public TContext Context {
         get => context;
         set => context = value;
@@ -171,12 +188,14 @@ public ref struct RefClosureFunc<TContext, TResult> : IClosureFunc<TContext, TRe
     public void Add(RefFunc<TContext, TResult> func) => Delegate += func;
     public void Remove(RefFunc<TContext, TResult> func) => Delegate -= func;
 
-    public TResult Invoke() => Delegate.Invoke(ref context);
+    public TResult Invoke() => DelegateIsNull ? default : Delegate.Invoke(ref context);
 
 }
 
 public ref struct RefClosureFunc<TContext, TArg, TResult> : IClosureFunc<TContext, TArg, TResult, FuncWithRefContext<TContext, TArg, TResult>>, IRefClosure<TContext> {
     public FuncWithRefContext<TContext, TArg, TResult> Delegate { get; set; }
+    public bool DelegateIsNull => Delegate is null;
+    
     public TContext Context {
         get => context;
         set => context = value;
@@ -192,11 +211,13 @@ public ref struct RefClosureFunc<TContext, TArg, TResult> : IClosureFunc<TContex
     public void Add(FuncWithRefContext<TContext, TArg, TResult> func) => Delegate += func;
     public void Remove(FuncWithRefContext<TContext, TArg, TResult> func) => Delegate -= func;
 
-    public TResult Invoke(TArg arg) => Delegate.Invoke(ref context, arg);
+    public TResult Invoke(TArg arg) => DelegateIsNull ? default : Delegate.Invoke(ref context, arg);
 }
 
 public ref struct RefClosureRefFunc<TContext, TArg, TResult> : IClosureRefFunc<TContext, TArg, TResult, RefFunc<TContext, TArg, TResult>>, IRefClosure<TContext> {
     public RefFunc<TContext, TArg, TResult> Delegate { get; set; }
+    public bool DelegateIsNull => Delegate is null;
+    
     public TContext Context {
         get => context;
         set => context = value;
@@ -212,6 +233,6 @@ public ref struct RefClosureRefFunc<TContext, TArg, TResult> : IClosureRefFunc<T
     public void Add(RefFunc<TContext, TArg, TResult> func) => Delegate += func;
     public void Remove(RefFunc<TContext, TArg, TResult> func) => Delegate -= func;
 
-    public TResult Invoke(ref TArg arg) => Delegate.Invoke(ref context, ref arg);
-    public TResult Invoke(TArg arg) => Delegate.Invoke(ref context, ref arg);
+    public TResult Invoke(TArg arg) => Invoke(ref arg);
+    public TResult Invoke(ref TArg arg) => DelegateIsNull ? default : Delegate.Invoke(ref context, ref arg);
 }

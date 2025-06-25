@@ -1,4 +1,7 @@
-﻿using Lh.Closures.Reflection.Experimental;
+﻿using Lh.Closures.Converting;
+
+#pragma warning disable CS8601 // Possible null reference assignment.
+// ReSharper disable ConvertToPrimaryConstructor
 
 namespace Lh.Closures;
 
@@ -32,6 +35,8 @@ public interface IAnonymousClosure<TContext, TDelegate> : IClosure<TContext, TDe
 public struct AnonymousClosure<TContext, TDelegate> : IAnonymousClosure<TContext, TDelegate>
     where TDelegate : Delegate {
     public TDelegate Delegate { get; set; }
+    public bool DelegateIsNull => Delegate is null;
+    
     public TContext Context { get; set; }
     
     public AnonymousClosure(TContext context, TDelegate @delegate) {
@@ -40,7 +45,7 @@ public struct AnonymousClosure<TContext, TDelegate> : IAnonymousClosure<TContext
     }
 
     public void Add(TDelegate action) => Delegate = (TDelegate)System.Delegate.Combine(Delegate, action);
-    public void Remove(TDelegate action) => Delegate = (TDelegate)System.Delegate.Remove(Delegate, action);
+    public void Remove(TDelegate action) => Delegate = (TDelegate)System.Delegate.Remove(Delegate, action)!;
 }
 
 public static class AnonymousClosureExtensions {
@@ -97,11 +102,12 @@ public static class AnonymousClosureExtensions {
         where TDelegate : Delegate {
         closure.Delegate.DynamicInvoke(closure.Context);
     }
-    
+
     /// <summary>
     /// Invokes the delegate with the context. The context is passed as the first argument followed by the provided argument.
     /// </summary>
     /// <param name="closure">The anonymous closure to invoke.</param>
+    /// <param name="arg">Argument to invoke with</param>
     /// <remarks>
     /// <b>Warning:</b> Calls <see cref="System.Delegate.DynamicInvoke"/> to perform the operation
     /// creating an array of objects and possibly boxing the context and argument.
@@ -110,11 +116,13 @@ public static class AnonymousClosureExtensions {
         where TDelegate : Delegate {
         closure.Delegate.DynamicInvoke(closure.Context, arg);
     }
-    
+
     /// <summary>
     /// Invokes the delegate with the context. The context is passed as the first argument followed by the provided arguments.
     /// </summary>
     /// <param name="closure">The anonymous closure to invoke.</param>
+    /// <param name="arg1">First argument</param>
+    /// <param name="arg2">Second argument</param>
     /// <remarks>
     /// <b>Warning:</b> Calls <see cref="System.Delegate.DynamicInvoke"/> to perform the operation
     /// creating an array of objects and possibly boxing the context and arguments.
@@ -122,5 +130,21 @@ public static class AnonymousClosureExtensions {
     public static void DynamicInvokeWithContext<TContext, TDelegate, TArg1, TArg2>(this AnonymousClosure<TContext, TDelegate> closure, TArg1 arg1, TArg2 arg2) 
         where TDelegate : Delegate {
         closure.Delegate.DynamicInvoke(closure.Context, arg1, arg2);
+    }
+
+    /// <summary>
+    /// Invokes the delegate with the context. The context is passed as the first argument followed by the provided arguments.
+    /// </summary>
+    /// <param name="closure">The anonymous closure to invoke.</param>
+    /// <param name="arg1">First argument</param>
+    /// <param name="arg2">Second argument</param>
+    /// <param name="arg3">Third argument</param>
+    /// <remarks>
+    /// <b>Warning:</b> Calls <see cref="System.Delegate.DynamicInvoke"/> to perform the operation
+    /// creating an array of objects and possibly boxing the context and arguments.
+    /// </remarks>
+    public static void DynamicInvokeWithContext<TContext, TDelegate, TArg1, TArg2, TArg3>(this AnonymousClosure<TContext, TDelegate> closure, TArg1 arg1, TArg2 arg2, TArg3 arg3) 
+        where TDelegate : Delegate {
+        closure.Delegate.DynamicInvoke(closure.Context, arg1, arg2, arg3);
     }
 }

@@ -20,11 +20,12 @@
 - Remove_MultipleTimes_Works
 
 ## Argument closure tests
-**Each one of these must be tested on all types of closures that take in an argument**
+**Each one of these must be tested on all types of closures that take in a normal argument**
 - ReceivesArg
 
 ## Ref argument closure tests
 **Each one of these must be tested on all types of closures that take in a ref argument**
+- ReceivesRefArg
 - ModifiesRefArgValue
 - ModifiesRefArgValue_MultipleDelegates
 - ModifiesRefArgValue_MultipleInvocations
@@ -35,7 +36,7 @@
 - Reset_ResetsModifiedContext
 
 ## Ref closure tests
-**Each one of these must be tested on all types of ref closures that modify the original context**
+**Each one of these must be tested on all types of ref closures where the context is passed as ref**
 - ModifiesOriginalContext
 - ModifiesOriginalContext_MultipleDelegates
 - ModifiesOriginalContext_MultipleInvocations
@@ -47,14 +48,47 @@
 **Each one of these must be tested on all types of closure funcs**
 - ReturnsExpectedValue
 
-# Seperated Tests
+# Edge case tests
+**Each type of closure should also have edge cases tested in a separate file categorized by the closure type**
+
+## Default edge case tests
+**Each one of these must be tested on all types of "Normal" closures**
+- NullContext_Invoke_DoesNotThrow
+- NullDelegate_Invoke_DoesNotThrow (for ref arg closures call this with non ref arg)
+- NullDelegate_Add_DoesNotThrow
+- Add_NullDelegate_DoesNotThrow
+- NullDelegate_Remove_DoesNotThrow
+- Remove_NullDelegate_DoesNotThrow
+- ExceptionDuringInvocation_Throws
+- ExceptionDuringInvocation_TryCatch_CatchesThrownException
+- ConcurrentAddRemoveInvoke_IsThreadSafe (Exclude on ref closures)
+
+## Argument closure edge cases
+**Each one of these must be tested on all types of closures that take in a normal argument**
+- NullArgument_Invoke_DoesNotThrow
+
+## Ref argument closure edge cases
+**Each one of these must be tested on all types of closures that take in a ref argument**
+- NullDelegate_Invoke_RefArg_DoesNotThrow
+- NullRefArgument_Invoke_DoesNotThrow
+- NullRefArg_SettingValue_ModifiesOriginalRef
+
+## Mutating closure edge cases
+**Each one of these must be tested on all types mutating closures that modify the stored context**
+- Reset_NullDelegate_DoesNotThrow
+- ConcurrentInvoke_SharesContextAcrossThreads
+
+## Ref closure edge cases
+**Each one of these must be tested on all types of ref closures where the context is passed as ref**
+- NullContext_Invoke_SetsValueToOriginalContext
+
+# Separated Tests
 
 ## Creation Tests
 Every closure type should have a test using the Closure.(Type)
 factory method to ensure it works correctly.
 These should be in a separate file from functional tests.
-Ensure that the created type is correct, the context is set up properly,
-and that the Delegate is correct.
+Ensure that the created type is correct, the context is set up properly, and that the Delegate is correct.
 - `Closure.Action` for action closures
 - `Closure.Func` for func closures
 
