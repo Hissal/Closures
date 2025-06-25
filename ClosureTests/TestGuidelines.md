@@ -1,6 +1,6 @@
 ﻿# Guidelines
 - Each test should be independent and not rely on the state of other tests.
-- Tests should be clear and concise, focusing on a single aspect of the action closure functionality.
+- Tests should be clear and concise, focusing on a single aspect of the closure functionality.
 - Use descriptive names for test methods to indicate what they are testing.
 - Ensure that all edge cases are covered, including empty contexts, null values, and invalid inputs.
 - Document any assumptions made in the tests.
@@ -54,7 +54,7 @@
 ## Default edge case tests
 **Each one of these must be tested on all types of "Normal" closures**
 - NullContext_Invoke_DoesNotThrow
-- NullDelegate_Invoke_DoesNotThrow (for ref arg closures call this with non ref arg)
+- NullDelegate_Invoke_DoesNotThrow (For ref arg closures call this with non ref arg)
 - NullDelegate_Add_DoesNotThrow
 - Add_NullDelegate_DoesNotThrow
 - NullDelegate_Remove_DoesNotThrow

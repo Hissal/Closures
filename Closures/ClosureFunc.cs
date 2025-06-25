@@ -26,6 +26,11 @@ public interface IClosureRefFunc<TContext, TArg, out TResult, TFunc> : IClosureF
     
 }
 
+/// <summary>
+/// Captures a variable context and a function delegate to be invoked with the context.
+/// </summary>
+/// <typeparam name="TContext">The type of context to capture.</typeparam>
+/// <typeparam name="TResult">The type of result returned by the function.</typeparam>
 public struct ClosureFunc<TContext, TResult> : IClosureFunc<TContext, TResult, Func<TContext, TResult>> {
     public Func<TContext, TResult> Delegate { get; set; }
     public bool DelegateIsNull => Delegate is null;
@@ -43,6 +48,12 @@ public struct ClosureFunc<TContext, TResult> : IClosureFunc<TContext, TResult, F
     public TResult Invoke() => DelegateIsNull ? default : Delegate.Invoke(Context);
 }
 
+/// <summary>
+/// Captures a variable context and a function delegate to be invoked with the context and an argument.
+/// </summary>
+/// <typeparam name="TContext">The type of context to capture.</typeparam>
+/// <typeparam name="TArg">The type of argument to invoke the function with.</typeparam>
+/// <typeparam name="TResult">The type of result returned by the function.</typeparam>
 public struct ClosureFunc<TContext, TArg, TResult> : IClosureFunc<TContext, TArg, TResult, Func<TContext, TArg, TResult>> {
     public Func<TContext, TArg, TResult> Delegate { get; set; }
     public bool DelegateIsNull => Delegate is null;
@@ -60,6 +71,12 @@ public struct ClosureFunc<TContext, TArg, TResult> : IClosureFunc<TContext, TArg
     public TResult Invoke(TArg arg) => DelegateIsNull ? default : Delegate.Invoke(Context, arg);
 }
 
+/// <summary>
+/// Captures a variable context and a function delegate to be invoked with the context and a ref argument.
+/// </summary>
+/// <typeparam name="TContext">The type of context to capture.</typeparam>
+/// <typeparam name="TArg">The type of argument to invoke the function with.</typeparam>
+/// <typeparam name="TResult">The type of result returned by the function.</typeparam>
 public struct ClosureRefFunc<TContext, TArg, TResult> : IClosureRefFunc<TContext, TArg, TResult, RefFuncWithNormalContext<TContext, TArg, TResult>> {
     public RefFuncWithNormalContext<TContext, TArg, TResult> Delegate { get; set; }
     public bool DelegateIsNull => Delegate is null;
@@ -78,6 +95,15 @@ public struct ClosureRefFunc<TContext, TArg, TResult> : IClosureRefFunc<TContext
     public TResult Invoke(ref TArg arg) => DelegateIsNull ? default : Delegate.Invoke(Context, ref arg);
 }
 
+/// <summary>
+/// Captures a variable context and a function delegate to be invoked with the context by reference,
+/// allowing mutation of the stored context within the function.
+/// </summary>
+/// <typeparam name="TContext">The type of context to capture.</typeparam>
+/// <typeparam name="TResult">The type of result returned by the function.</typeparam>
+/// <remarks>
+/// Has a <see cref="MutatingClosureBehaviour"/> property to control how the context is handled after invocation.
+/// </remarks>
 public struct MutatingClosureFunc<TContext, TResult> : IClosureFunc<TContext, TResult, RefFunc<TContext, TResult>>, IMutatingClosure {
     public RefFunc<TContext, TResult> Delegate { get; set; }
     public bool DelegateIsNull => Delegate is null;
@@ -108,6 +134,16 @@ public struct MutatingClosureFunc<TContext, TResult> : IClosureFunc<TContext, TR
     }
 }
 
+/// <summary>
+/// Captures a variable context and a function delegate to be invoked with the context by reference and an argument,
+/// allowing mutation of the stored context within the function.
+/// </summary>
+/// <typeparam name="TContext">The type of context to capture.</typeparam>
+/// <typeparam name="TArg">The type of argument to invoke the function with.</typeparam>
+/// <typeparam name="TResult">The type of result returned by the function.</typeparam>
+/// <remarks>
+/// Has a <see cref="MutatingClosureBehaviour"/> property to control how the context is handled after invocation.
+/// </remarks>
 public struct MutatingClosureFunc<TContext, TArg, TResult> : IClosureFunc<TContext, TArg, TResult, FuncWithRefContext<TContext, TArg, TResult>>, IMutatingClosure {
     public FuncWithRefContext<TContext, TArg, TResult> Delegate { get; set; }
     public bool DelegateIsNull => Delegate is null;
@@ -138,6 +174,16 @@ public struct MutatingClosureFunc<TContext, TArg, TResult> : IClosureFunc<TConte
     }
 }
 
+/// <summary>
+/// Captures a variable context and a function delegate to be invoked with the context and an argument by reference,
+/// allowing mutation of the stored context within the function.
+/// </summary>
+/// <typeparam name="TContext">The type of context to capture.</typeparam>
+/// <typeparam name="TArg">The type of argument to invoke the function with.</typeparam>
+/// <typeparam name="TResult">The type of result returned by the function.</typeparam>
+/// <remarks>
+/// Has a <see cref="MutatingClosureBehaviour"/> property to control how the context is handled after invocation.
+/// </remarks>
 public struct MutatingClosureRefFunc<TContext, TArg, TResult> : IClosureRefFunc<TContext, TArg, TResult, RefFunc<TContext, TArg, TResult>>, IMutatingClosure {
     public RefFunc<TContext, TArg, TResult> Delegate { get; set; }
     public bool DelegateIsNull => Delegate is null;
@@ -169,6 +215,12 @@ public struct MutatingClosureRefFunc<TContext, TArg, TResult> : IClosureRefFunc<
     public TResult Invoke(TArg arg) => Invoke(ref arg);
 }
 
+/// <summary>
+/// Captures a reference to a variable context and a function delegate to be invoked with the context by reference,
+/// allowing mutation of the original context within the function.
+/// </summary>
+/// <typeparam name="TContext">The type of context to capture.</typeparam>
+/// <typeparam name="TResult">The type of result returned by the function.</typeparam>
 public ref struct RefClosureFunc<TContext, TResult> : IClosureFunc<TContext, TResult, RefFunc<TContext, TResult>>, IRefClosure<TContext> {
     public RefFunc<TContext, TResult> Delegate { get; set; }
     public bool DelegateIsNull => Delegate is null;
@@ -177,6 +229,8 @@ public ref struct RefClosureFunc<TContext, TResult> : IClosureFunc<TContext, TRe
         get => context;
         set => context = value;
     }
+    
+    /// <summary>A reference to the context</summary>
     public ref TContext RefContext => ref context;
     readonly ref TContext context;
 
@@ -192,6 +246,13 @@ public ref struct RefClosureFunc<TContext, TResult> : IClosureFunc<TContext, TRe
 
 }
 
+/// <summary>
+/// Captures a reference to a variable context and a function delegate to be invoked with the context by reference and an argument,
+/// allowing mutation of the original context within the function.
+/// </summary>
+/// <typeparam name="TContext">The type of context to capture.</typeparam>
+/// <typeparam name="TArg">The type of argument to invoke the function with.</typeparam>
+/// <typeparam name="TResult">The type of result returned by the function.</typeparam>
 public ref struct RefClosureFunc<TContext, TArg, TResult> : IClosureFunc<TContext, TArg, TResult, FuncWithRefContext<TContext, TArg, TResult>>, IRefClosure<TContext> {
     public FuncWithRefContext<TContext, TArg, TResult> Delegate { get; set; }
     public bool DelegateIsNull => Delegate is null;
@@ -200,6 +261,8 @@ public ref struct RefClosureFunc<TContext, TArg, TResult> : IClosureFunc<TContex
         get => context;
         set => context = value;
     }
+    
+    /// <summary>A reference to the context</summary>
     public ref TContext RefContext => ref context;
     readonly ref TContext context;
 
@@ -214,6 +277,13 @@ public ref struct RefClosureFunc<TContext, TArg, TResult> : IClosureFunc<TContex
     public TResult Invoke(TArg arg) => DelegateIsNull ? default : Delegate.Invoke(ref context, arg);
 }
 
+/// <summary>
+/// Captures a reference to a variable context and a function delegate to be invoked with the context and argument by reference,
+/// allowing mutation of the original context within the function.
+/// </summary>
+/// <typeparam name="TContext">The type of context to capture.</typeparam>
+/// <typeparam name="TArg">The type of argument to invoke the function with.</typeparam>
+/// <typeparam name="TResult">The type of result returned by the function.</typeparam>
 public ref struct RefClosureRefFunc<TContext, TArg, TResult> : IClosureRefFunc<TContext, TArg, TResult, RefFunc<TContext, TArg, TResult>>, IRefClosure<TContext> {
     public RefFunc<TContext, TArg, TResult> Delegate { get; set; }
     public bool DelegateIsNull => Delegate is null;
@@ -222,6 +292,8 @@ public ref struct RefClosureRefFunc<TContext, TArg, TResult> : IClosureRefFunc<T
         get => context;
         set => context = value;
     }
+    
+    /// <summary>A reference to the context</summary>
     public ref TContext RefContext => ref context;
     readonly ref TContext context;
 

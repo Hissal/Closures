@@ -30,7 +30,9 @@ public interface IAnonymousClosure<TContext, TDelegate> : IClosure<TContext, TDe
 }
 
 /// <summary>
-/// An anonymous closure must be manually invoked using the Delegate and Context
+/// An anonymous closure is a closure for delegates that do not have a known type. Meaning they can be used with any delegate type.
+/// <br></br> <br></br>
+/// <b>Note</b> The <see cref="Delegate"/> must be manually invoked using it directly and passing the context as the first argument.
 /// </summary>
 public struct AnonymousClosure<TContext, TDelegate> : IAnonymousClosure<TContext, TDelegate>
     where TDelegate : Delegate {
