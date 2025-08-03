@@ -1,7 +1,7 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Running;
-using Lh.Closures;
+using Closures;
 
 BenchmarkRunner.Run<ForLoopBenchmarks>();
 

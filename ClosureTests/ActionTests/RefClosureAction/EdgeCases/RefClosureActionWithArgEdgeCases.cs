@@ -1,4 +1,4 @@
-﻿using Lh.Closures;
+﻿using Closures;
 
 namespace ClosureTests.ActionTests.RefClosureAction.EdgeCases;
 

@@ -1,5 +1,5 @@
-﻿using Lh.Closures;
-using Lh.Closures.Converting.Experimental;
+﻿using Closures;
+using Closures.Converting.Experimental;
 
 namespace ClosureTests.ReflectionTests;
 
@@ -21,7 +21,7 @@ public class AnonymousTryConvertTests {
     
     [Test]
     public void Anonymous_ClosureAction_TryConvert() {
-        var closure = Lh.Closures.Closure.Action(10, ctx => { /* Do something with ctx */ });
+        var closure = Closure.Action(10, ctx => { /* Do something with ctx */ });
         var anonymous = closure.ToAnonymous();
 
         var success = ReflectionClosureConverter.TryConvert(anonymous, out var converted);
@@ -36,7 +36,7 @@ public class AnonymousTryConvertTests {
 
     [Test]
     public void Anonymous_ClosureActionWithArg_TryConvert() {
-        var closure = Lh.Closures.Closure.Action(10, (int ctx, int arg) => { /* Do something with ctx */ });
+        var closure = Closure.Action(10, (int ctx, int arg) => { /* Do something with ctx */ });
         var anonymous = closure.ToAnonymous();
         
         var success = ReflectionClosureConverter.TryConvert(anonymous, out var converted);
@@ -51,7 +51,7 @@ public class AnonymousTryConvertTests {
 
     [Test]
     public void Anonymous_MutatingClosureAction_TryConvert() {
-        var closure = Lh.Closures.Closure.Action(10, (ref int ctx) => { /* Do something with ctx */ });
+        var closure = Closure.Action(10, (ref int ctx) => { /* Do something with ctx */ });
         var anonymous = closure.ToAnonymous();
         
         var success = ReflectionClosureConverter.TryConvert(anonymous, out var converted);
@@ -66,7 +66,7 @@ public class AnonymousTryConvertTests {
 
     [Test]
     public void Anonymous_MutatingClosureActionWithArg_TryConvert() {
-        var closure = Lh.Closures.Closure.Action(10, (ref int ctx, int arg) => { /* Do something with ctx */ });
+        var closure = Closure.Action(10, (ref int ctx, int arg) => { /* Do something with ctx */ });
         var anonymous = closure.ToAnonymous();
         
         var success = ReflectionClosureConverter.TryConvert(anonymous, out var converted);
@@ -81,7 +81,7 @@ public class AnonymousTryConvertTests {
 
     [Test]
     public void Anonymous_ClosureFunc_TryConvert() {
-        var closure = Lh.Closures.Closure.Func(10, ctx => ctx + 1);
+        var closure = Closure.Func(10, ctx => ctx + 1);
         var anonymous = closure.ToAnonymous();
         
         var success = ReflectionClosureConverter.TryConvert(anonymous, out var converted);
@@ -96,7 +96,7 @@ public class AnonymousTryConvertTests {
 
     [Test]
     public void Anonymous_ClosureFuncWithArg_TryConvert() {
-        var closure = Lh.Closures.Closure.Func(10, (int ctx, int arg) => ctx + arg);
+        var closure = Closure.Func(10, (int ctx, int arg) => ctx + arg);
         var anonymous = closure.ToAnonymous();
         
         var success = ReflectionClosureConverter.TryConvert(anonymous, out var converted);
@@ -111,7 +111,7 @@ public class AnonymousTryConvertTests {
 
     [Test]
     public void Anonymous_MutatingClosureFunc_TryConvert() {
-        var closure = Lh.Closures.Closure.Func(10, (ref int ctx) => ctx + 1);
+        var closure = Closure.Func(10, (ref int ctx) => ctx + 1);
         var anonymous = closure.ToAnonymous();
         
         var success = ReflectionClosureConverter.TryConvert(anonymous, out var converted);
@@ -126,7 +126,7 @@ public class AnonymousTryConvertTests {
 
     [Test]
     public void Anonymous_MutatingClosureFuncWithArg_TryConvert() {
-        var closure = Lh.Closures.Closure.Func(10, (ref int ctx, int arg) => ctx + arg);
+        var closure = Closure.Func(10, (ref int ctx, int arg) => ctx + arg);
         var anonymous = closure.ToAnonymous();
         
         var success = ReflectionClosureConverter.TryConvert(anonymous, out var converted);
