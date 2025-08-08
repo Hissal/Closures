@@ -25,11 +25,10 @@
     public interface IClosure {
 
     }
-    public interface IClosure<TContext> : IClosure {
+    public interface IClosure<TContext, TDelegate> : IClosure where TDelegate : Delegate {
         TContext Context { get; set; }
-    }
-    public interface IClosure<TContext, TDelegate> : IClosure<TContext> where TDelegate : Delegate {
         TDelegate Delegate { get; set; }
+        
         bool DelegateIsNull { get; }
     
         void Add(TDelegate @delegate);

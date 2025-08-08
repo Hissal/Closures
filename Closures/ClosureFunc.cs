@@ -3,26 +3,16 @@
 // ReSharper disable ConvertToPrimaryConstructor
 
 namespace Closures {
-    public interface IFunc<out TResult> {
+    public interface IClosureFunc<TContext, out TResult, TFunc> : IClosure<TContext, TFunc> where TFunc : Delegate {
         TResult Invoke();
     }
-    public interface IFunc<in TArg, out TResult> {
+
+    public interface IClosureFunc<TContext, in TArg, out TResult, TFunc> : IClosure<TContext, TFunc> where TFunc : Delegate {
         TResult Invoke(TArg arg);
     }
-    public interface IRefFunc<TArg, out TResult> {
+
+    public interface IClosureRefFunc<TContext, TArg, out TResult, TFunc> : IClosureFunc<TContext, TArg, TResult, TFunc> where TFunc : Delegate {
         TResult Invoke(ref TArg arg);
-    }
-
-    public interface IClosureFunc<TContext, out TResult, TFunc> : IClosure<TContext, TFunc>, IFunc<TResult> where TFunc : Delegate {
-
-    }
-
-    public interface IClosureFunc<TContext, in TArg, out TResult, TFunc> : IClosure<TContext, TFunc>, IFunc<TArg, TResult> where TFunc : Delegate {
-
-    }
-
-    public interface IClosureRefFunc<TContext, TArg, out TResult, TFunc> : IClosureFunc<TContext, TArg, TResult, TFunc>, IRefFunc<TArg, TResult> where TFunc : Delegate {
-    
     }
 
     /// <summary>

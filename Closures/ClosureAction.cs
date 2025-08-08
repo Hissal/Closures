@@ -1,26 +1,16 @@
 ﻿#pragma warning disable CS8601 // Possible null reference assignment.
 // ReSharper disable ConvertToPrimaryConstructor
 namespace Closures {
-    public interface IAction {
+    public interface IClosureAction<TContext, TAction> : IClosure<TContext, TAction> where TAction : Delegate {
         void Invoke();
     }
-    public interface IAction<in TArg> {
+
+    public interface IClosureAction<TContext, in TArg, TAction> : IClosure<TContext, TAction> where TAction : Delegate {
         void Invoke(TArg arg);
     }
-    public interface IRefAction<TArg> {
+
+    public interface IClosureRefAction<TContext, TArg, TAction> : IClosureAction<TContext, TArg, TAction> where TAction : Delegate {
         void Invoke(ref TArg arg);
-    }
-
-    public interface IClosureAction<TContext, TAction> : IClosure<TContext, TAction>, IAction where TAction : Delegate {
-
-    }
-
-    public interface IClosureAction<TContext, in TArg, TAction> : IClosure<TContext, TAction>, IAction<TArg> where TAction : Delegate {
-
-    }
-
-    public interface IClosureRefAction<TContext, TArg, TAction> : IClosureAction<TContext, TArg, TAction>, IRefAction<TArg> where TAction : Delegate {
-    
     }
 
     /// <summary>
