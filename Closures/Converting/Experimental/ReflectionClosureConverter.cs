@@ -16,10 +16,10 @@ namespace Closures.Converting.Experimental {
     
         public static void SetDefaultClosureTypeResolver(ClosureTypeResolver resolver) => s_defaultResolver = resolver;
 
-        public static bool TryConvert<TConvertedClosure>(IAnonymousClosure anonymousClosure, out TConvertedClosure convertedClosure, ClosureTypeResolver? resolver = null) 
+        public static bool TryConvert<TConvertedClosure>(ICustomClosure customClosure, out TConvertedClosure convertedClosure, ClosureTypeResolver? resolver = null) 
             where TConvertedClosure : struct, IClosure {
         
-            var anonymousClosureType = anonymousClosure.GetType();
+            var anonymousClosureType = customClosure.GetType();
         
             // Get the context and delegate properties from the closure
             var contextProperty = anonymousClosureType.GetProperty("Context")!;
@@ -29,8 +29,8 @@ namespace Closures.Converting.Experimental {
             var conversionType = resolver.Resolve(delegateProperty.PropertyType);
         
             if (typeof(TConvertedClosure).IsAssignableFrom(conversionType)) {
-                var context = contextProperty.GetValue(anonymousClosure, null);
-                var @delegate = delegateProperty.GetValue(anonymousClosure, null);
+                var context = contextProperty.GetValue(customClosure, null);
+                var @delegate = delegateProperty.GetValue(customClosure, null);
             
                 object boxed = new TConvertedClosure();
                 var closureType = typeof(TConvertedClosure);
@@ -46,12 +46,12 @@ namespace Closures.Converting.Experimental {
             return false;
         }
     
-        public static bool TryConvert<TContext, TDelegate>(AnonymousClosure<TContext, TDelegate> anonymousClosure, out IClosure<TContext, TDelegate> convertedClosure, ClosureTypeResolver? resolver = null) 
+        public static bool TryConvert<TContext, TDelegate>(CustomClosure<TContext, TDelegate> customClosure, out IClosure<TContext, TDelegate> convertedClosure, ClosureTypeResolver? resolver = null) 
             where TDelegate : Delegate {
         
-            convertedClosure = new AnonymousClosure<TContext, TDelegate>(anonymousClosure.Context, anonymousClosure.Delegate);
+            convertedClosure = new CustomClosure<TContext, TDelegate>(customClosure.Context, customClosure.Delegate);
         
-            if (!TryConvert<AnonymousClosure<TContext, TDelegate>>(anonymousClosure, out var anonymousToIClosure, resolver))
+            if (!TryConvert<CustomClosure<TContext, TDelegate>>(customClosure, out var anonymousToIClosure, resolver))
                 return false;
 
             if (anonymousToIClosure is not IClosure<TContext, TDelegate> converted)
@@ -62,7 +62,7 @@ namespace Closures.Converting.Experimental {
         }
 
         static bool TryConvert<TAnonymousClosure>(TAnonymousClosure closure, out IClosure? convertedClosure, ClosureTypeResolver? resolver = null)
-            where TAnonymousClosure : struct, IAnonymousClosure {
+            where TAnonymousClosure : struct, ICustomClosure {
         
             // Get the context and delegate properties from the closure
             var contextProperty = typeof(TAnonymousClosure).GetProperty("Context")!;
@@ -74,7 +74,7 @@ namespace Closures.Converting.Experimental {
             resolver ??= DefaultResolver;
             var conversionType = resolver.Resolve(delegateType);
 
-            if (typeof(IAnonymousClosure).IsAssignableFrom(conversionType)) {
+            if (typeof(ICustomClosure).IsAssignableFrom(conversionType)) {
                 convertedClosure = null;
                 return false;
             }

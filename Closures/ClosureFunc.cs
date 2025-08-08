@@ -41,8 +41,8 @@ namespace Closures {
             Delegate = func;
         }
 
-        public void Add(Func<TContext, TResult> func) => Delegate += func;
-        public void Remove(Func<TContext, TResult> func) => Delegate -= func;
+        public void Add(Func<TContext, TResult> @delegate) => Delegate += @delegate;
+        public void Remove(Func<TContext, TResult> @delegate) => Delegate -= @delegate;
 
         public TResult Invoke() => DelegateIsNull ? default : Delegate.Invoke(Context);
     }
@@ -64,8 +64,8 @@ namespace Closures {
             Delegate = func;
         }
 
-        public void Add(Func<TContext, TArg, TResult> func) => Delegate += func;
-        public void Remove(Func<TContext, TArg, TResult> func) => Delegate -= func;
+        public void Add(Func<TContext, TArg, TResult> @delegate) => Delegate += @delegate;
+        public void Remove(Func<TContext, TArg, TResult> @delegate) => Delegate -= @delegate;
 
         public TResult Invoke(TArg arg) => DelegateIsNull ? default : Delegate.Invoke(Context, arg);
     }
@@ -87,8 +87,8 @@ namespace Closures {
             Delegate = func;
         }
 
-        public void Add(RefFuncWithNormalContext<TContext, TArg, TResult> func) => Delegate += func;
-        public void Remove(RefFuncWithNormalContext<TContext, TArg, TResult> func) => Delegate -= func;
+        public void Add(RefFuncWithNormalContext<TContext, TArg, TResult> @delegate) => Delegate += @delegate;
+        public void Remove(RefFuncWithNormalContext<TContext, TArg, TResult> @delegate) => Delegate -= @delegate;
     
         public TResult Invoke(TArg arg) => Invoke(ref arg);
         public TResult Invoke(ref TArg arg) => DelegateIsNull ? default : Delegate.Invoke(Context, ref arg);
@@ -121,8 +121,8 @@ namespace Closures {
             MutatingBehaviour = mutatingBehaviour;
         }
 
-        public void Add(RefFunc<TContext, TResult> func) => Delegate += func;
-        public void Remove(RefFunc<TContext, TResult> func) => Delegate -= func;
+        public void Add(RefFunc<TContext, TResult> @delegate) => Delegate += @delegate;
+        public void Remove(RefFunc<TContext, TResult> @delegate) => Delegate -= @delegate;
 
         public TResult Invoke() {
             if (MutatingBehaviour is MutatingClosureBehaviour.Retain) {
@@ -161,8 +161,8 @@ namespace Closures {
             MutatingBehaviour = mutatingBehaviour;
         }
 
-        public void Add(FuncWithRefContext<TContext, TArg, TResult> func) => Delegate += func;
-        public void Remove(FuncWithRefContext<TContext, TArg, TResult> func) => Delegate -= func;
+        public void Add(FuncWithRefContext<TContext, TArg, TResult> @delegate) => Delegate += @delegate;
+        public void Remove(FuncWithRefContext<TContext, TArg, TResult> @delegate) => Delegate -= @delegate;
 
         public TResult Invoke(TArg arg) {
             if (MutatingBehaviour is MutatingClosureBehaviour.Retain) {
@@ -201,8 +201,8 @@ namespace Closures {
             MutatingBehaviour = mutatingBehaviour;
         }
 
-        public void Add(RefFunc<TContext, TArg, TResult> func) => Delegate += func;
-        public void Remove(RefFunc<TContext, TArg, TResult> func) => Delegate -= func;
+        public void Add(RefFunc<TContext, TArg, TResult> @delegate) => Delegate += @delegate;
+        public void Remove(RefFunc<TContext, TArg, TResult> @delegate) => Delegate -= @delegate;
 
         public TResult Invoke(ref TArg arg) {
             if (MutatingBehaviour is MutatingClosureBehaviour.Retain) {
@@ -238,8 +238,8 @@ namespace Closures {
             Delegate = func;
         }
 
-        public void Add(RefFunc<TContext, TResult> func) => Delegate += func;
-        public void Remove(RefFunc<TContext, TResult> func) => Delegate -= func;
+        public void Add(RefFunc<TContext, TResult> @delegate) => Delegate += @delegate;
+        public void Remove(RefFunc<TContext, TResult> @delegate) => Delegate -= @delegate;
 
         public TResult Invoke() => DelegateIsNull ? default : Delegate.Invoke(ref context);
 
@@ -270,8 +270,8 @@ namespace Closures {
             Delegate = func;
         }
 
-        public void Add(FuncWithRefContext<TContext, TArg, TResult> func) => Delegate += func;
-        public void Remove(FuncWithRefContext<TContext, TArg, TResult> func) => Delegate -= func;
+        public void Add(FuncWithRefContext<TContext, TArg, TResult> @delegate) => Delegate += @delegate;
+        public void Remove(FuncWithRefContext<TContext, TArg, TResult> @delegate) => Delegate -= @delegate;
 
         public TResult Invoke(TArg arg) => DelegateIsNull ? default : Delegate.Invoke(ref context, arg);
     }
@@ -301,8 +301,8 @@ namespace Closures {
             Delegate = func;
         }
 
-        public void Add(RefFunc<TContext, TArg, TResult> func) => Delegate += func;
-        public void Remove(RefFunc<TContext, TArg, TResult> func) => Delegate -= func;
+        public void Add(RefFunc<TContext, TArg, TResult> @delegate) => Delegate += @delegate;
+        public void Remove(RefFunc<TContext, TArg, TResult> @delegate) => Delegate -= @delegate;
 
         public TResult Invoke(TArg arg) => Invoke(ref arg);
         public TResult Invoke(ref TArg arg) => DelegateIsNull ? default : Delegate.Invoke(ref context, ref arg);

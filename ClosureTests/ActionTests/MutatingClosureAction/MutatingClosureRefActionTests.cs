@@ -106,7 +106,7 @@ public class MutatingClosureRefActionTests {
         int arg = 2;
         int expected = context + arg;
             
-        var closure = Closure.Action(context, (int ctx, ref int a) => Assert.That(ctx + a, Is.EqualTo(expected)));
+        var closure = Closure.Action(context, (ref int ctx, ref int a) => Assert.That(ctx + a, Is.EqualTo(expected)));
         closure.Invoke(ref arg);
     }
     
@@ -116,7 +116,7 @@ public class MutatingClosureRefActionTests {
         int arg = 3;
         int expected = arg + context;
             
-        var closure = Closure.Action(context, (int ctx, ref int val) => val += ctx);
+        var closure = Closure.Action(context, (ref int ctx, ref int val) => val += ctx);
         closure.Invoke(ref arg);
         Assert.That(arg, Is.EqualTo(expected));
     }
@@ -127,9 +127,9 @@ public class MutatingClosureRefActionTests {
         int arg = 3;
         int expected = arg + context * 3;
             
-        var closure = Closure.Action(context, (int ctx, ref int val) => val += ctx);
-        closure.Add((int ctx, ref int val) => val += ctx);
-        closure.Add((int ctx, ref int val) => val += ctx);
+        var closure = Closure.Action(context, (ref int ctx, ref int val) => val += ctx);
+        closure.Add((ref int ctx, ref int val) => val += ctx);
+        closure.Add((ref int ctx, ref int val) => val += ctx);
         
         closure.Invoke(ref arg);
         Assert.That(arg, Is.EqualTo(expected));
@@ -141,7 +141,7 @@ public class MutatingClosureRefActionTests {
         int arg = 3;
         int expected = arg + context * 2;
             
-        var closure = Closure.Action(context, (int ctx, ref int val) => val += ctx);
+        var closure = Closure.Action(context, (ref int ctx, ref int val) => val += ctx);
         closure.Invoke(ref arg);
         closure.Invoke(ref arg);
         Assert.That(arg, Is.EqualTo(expected));

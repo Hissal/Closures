@@ -11,10 +11,10 @@ public class AnonymousTryConvertTests {
         public UnknownDelegate<TContext> Delegate { get; set; }
         public bool DelegateIsNull => Delegate is null;
 
-        public void Add(UnknownDelegate<TContext> action) {
+        public void Add(UnknownDelegate<TContext> @delegate) {
             // noop
         }
-        public void Remove(UnknownDelegate<TContext> action) {
+        public void Remove(UnknownDelegate<TContext> @delegate) {
             // noop
         }
     }
@@ -22,7 +22,7 @@ public class AnonymousTryConvertTests {
     [Test]
     public void Anonymous_ClosureAction_TryConvert() {
         var closure = Closure.Action(10, ctx => { /* Do something with ctx */ });
-        var anonymous = closure.ToAnonymous();
+        var anonymous = closure.ToCustom();
 
         var success = ReflectionClosureConverter.TryConvert(anonymous, out var converted);
         
@@ -37,7 +37,7 @@ public class AnonymousTryConvertTests {
     [Test]
     public void Anonymous_ClosureActionWithArg_TryConvert() {
         var closure = Closure.Action(10, (int ctx, int arg) => { /* Do something with ctx */ });
-        var anonymous = closure.ToAnonymous();
+        var anonymous = closure.ToCustom();
         
         var success = ReflectionClosureConverter.TryConvert(anonymous, out var converted);
         
@@ -52,7 +52,7 @@ public class AnonymousTryConvertTests {
     [Test]
     public void Anonymous_MutatingClosureAction_TryConvert() {
         var closure = Closure.Action(10, (ref int ctx) => { /* Do something with ctx */ });
-        var anonymous = closure.ToAnonymous();
+        var anonymous = closure.ToCustom();
         
         var success = ReflectionClosureConverter.TryConvert(anonymous, out var converted);
         
@@ -67,7 +67,7 @@ public class AnonymousTryConvertTests {
     [Test]
     public void Anonymous_MutatingClosureActionWithArg_TryConvert() {
         var closure = Closure.Action(10, (ref int ctx, int arg) => { /* Do something with ctx */ });
-        var anonymous = closure.ToAnonymous();
+        var anonymous = closure.ToCustom();
         
         var success = ReflectionClosureConverter.TryConvert(anonymous, out var converted);
         
@@ -82,7 +82,7 @@ public class AnonymousTryConvertTests {
     [Test]
     public void Anonymous_ClosureFunc_TryConvert() {
         var closure = Closure.Func(10, ctx => ctx + 1);
-        var anonymous = closure.ToAnonymous();
+        var anonymous = closure.ToCustom();
         
         var success = ReflectionClosureConverter.TryConvert(anonymous, out var converted);
         
@@ -97,7 +97,7 @@ public class AnonymousTryConvertTests {
     [Test]
     public void Anonymous_ClosureFuncWithArg_TryConvert() {
         var closure = Closure.Func(10, (int ctx, int arg) => ctx + arg);
-        var anonymous = closure.ToAnonymous();
+        var anonymous = closure.ToCustom();
         
         var success = ReflectionClosureConverter.TryConvert(anonymous, out var converted);
         
@@ -112,7 +112,7 @@ public class AnonymousTryConvertTests {
     [Test]
     public void Anonymous_MutatingClosureFunc_TryConvert() {
         var closure = Closure.Func(10, (ref int ctx) => ctx + 1);
-        var anonymous = closure.ToAnonymous();
+        var anonymous = closure.ToCustom();
         
         var success = ReflectionClosureConverter.TryConvert(anonymous, out var converted);
         
@@ -127,7 +127,7 @@ public class AnonymousTryConvertTests {
     [Test]
     public void Anonymous_MutatingClosureFuncWithArg_TryConvert() {
         var closure = Closure.Func(10, (ref int ctx, int arg) => ctx + arg);
-        var anonymous = closure.ToAnonymous();
+        var anonymous = closure.ToCustom();
         
         var success = ReflectionClosureConverter.TryConvert(anonymous, out var converted);
         
@@ -142,7 +142,7 @@ public class AnonymousTryConvertTests {
     [Test]
     public void Anonymous_UnknownClosure_TryConvert_FailsAndReturnsAnonymousClosure() {
         var unknownClosure = new UnknownClosure<int>();
-        var anonymous = unknownClosure.ToAnonymous();
+        var anonymous = unknownClosure.ToCustom();
         
         var success = ReflectionClosureConverter.TryConvert(anonymous, out var converted);
         

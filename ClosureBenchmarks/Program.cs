@@ -3,10 +3,338 @@ using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Running;
 using Closures;
 
-BenchmarkRunner.Run<ForLoopBenchmarks>();
+namespace ClosureBenchmarks;
+
+public static class Program {
+    public static void Main(string[] args) {
+        BenchmarkRunner.Run<AnonymousBenchmarks>();
+        return;
+        var anonmark = new AnonymousBenchmarks();
+        
+        var anonymous = Closure.Action(20, (int c) => {
+            // Simulate some work
+            var result = c + 1;
+        }).AsAnonymous();
+        
+        anonymous.Invoke();
+        // Run the benchmarks
+
+        // Uncomment to run the ForLoopBenchmarks
+        // BenchmarkRunner.Run<ForLoopBenchmarks>();
+    }
+}
 
 [MemoryDiagnoser(false)]
 [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
+    [OperationsPerSecond]
+public class AnonymousValueBechmarks {
+    [Benchmark]
+    [BenchmarkCategory("100")]
+    public void AnonymousValue_Create_100x() {
+        for (int i = 0; i < 100; i++) {
+            var anon = AnonymousValue.From(i);
+        }
+    }
+    
+    [Benchmark]
+    [BenchmarkCategory("100")]
+    public void AnonymousValue_CreateAndSet_100x() {
+        for (int i = 0; i < 100; i++) {
+            var anon = AnonymousValue.From(i);
+            anon.Set(i + 1);
+        }
+    }
+    
+    [Benchmark]
+    [BenchmarkCategory("100")]
+    public void AnonymousValue_CreateAndSetDifferentType_100x() {
+        for (int i = 0; i < 100; i++) {
+            var anon = AnonymousValue.From(i);
+            anon.Set(i + 1.0); // Set a different type (double)
+        }
+    }
+
+    [Benchmark]
+    [BenchmarkCategory("100")]
+    public void AnonymousValue_CreateAndCast_100x() {
+        for (int i = 0; i < 100; i++) {
+            var anon = AnonymousValue.From(i);
+            var casted = anon.As<int>();
+        }
+    }
+
+    [Benchmark]
+    [BenchmarkCategory("100")]
+    public void AnonymousValue_CreateAndCastWithIsCheck_100x() {
+        for (int i = 0; i < 100; i++) {
+            var anon = AnonymousValue.From(i);
+            if (anon.Is<int>()) {
+                var casted = anon.As<int>();
+            }
+            else {
+                throw new InvalidOperationException();
+            }
+        }
+    }
+
+    [Benchmark]
+    [BenchmarkCategory("100")]
+    public void AnonymousValue_CreateAndCastWithIsCheckAndBoxing_100x() {
+        for (int i = 0; i < 100; i++) {
+            var anon = AnonymousValue.From((i, 0));
+            if (anon.Is<(int, int)>()) {
+                var casted = anon.As<(int, int)>();
+            }
+            else {
+                throw new InvalidOperationException();
+            }
+        }
+    }
+}
+
+[MemoryDiagnoser(false)]
+[GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
+public class AnonymousBenchmarks {
+    const int c_iterationCount = 1_000_000;
+
+    [Benchmark]
+    [BenchmarkCategory("10000")]
+    public void Action_10000x() {
+        for (int i = 0; i < c_iterationCount; i++) {
+            var context = i; // Capture the current value of i
+            var action = new Action(() => {
+                // Simulate some work
+                var result = context + 1;
+            });
+            action.Invoke();
+        }
+    }
+
+    [Benchmark]
+    [BenchmarkCategory("10000")]
+    public void Action_NoTemp_10000x() {
+        for (int i = 0; i < c_iterationCount; i++) {
+            var action = new Action(() => {
+                var result = i + 1;
+            });
+            action.Invoke();
+        }
+    }
+
+    [Benchmark]
+    [BenchmarkCategory("10000")]
+    public void ClosureAction_10000x() {
+        for (int i = 0; i < c_iterationCount; i++) {
+            var context = i;
+            var closure = Closure.Action(context, (int c) => {
+                // Simulate some work
+                var result = c + 1;
+            });
+            closure.Invoke();
+        }
+    }
+
+    [Benchmark]
+    [BenchmarkCategory("10000")]
+    public void AnonymousClosure_10000x() {
+        for (int i = 0; i < c_iterationCount; i++) {
+            var context = i;
+            var anonymous = AnonymousClosure.Create(AnonymousValue.From(context), (int c) => {
+                // Simulate some work
+                var result = c + 1;
+            });
+            anonymous.Invoke();
+        }
+    }
+
+    [Benchmark]
+    [BenchmarkCategory("10000")]
+    public void AnonymousClosure_WithArg_10000x() {
+        for (int i = 0; i < c_iterationCount; i++) {
+            var context = i;
+            var anonymous = AnonymousClosure.Create(AnonymousValue.From(context), (int c, int a) => {
+                // Simulate some work
+                var result = c + a;
+            });
+            anonymous.Invoke(1);
+        }
+    }
+
+    [Benchmark]
+    [BenchmarkCategory("10000")]
+    public void AnonymousClosure_WithRefArg_10000x() {
+        for (int i = 0; i < c_iterationCount; i++) {
+            var context = i;
+            var anonymous = AnonymousClosure.Create(AnonymousValue.From(context), (int c, ref int a) => {
+                // Simulate some work
+                var result = c + a;
+            });
+            var a = 1;
+            anonymous.Invoke(ref a);
+        }
+    }
+
+    [Benchmark]
+    [BenchmarkCategory("10000")]
+    public void AnonymousClosure_WithRefCtxRefArg_10000x() {
+        for (int i = 0; i < c_iterationCount; i++) {
+            var context = i;
+            var anonymous = AnonymousClosure.Create(AnonymousValue.From(context), (ref int c, ref int a) => {
+                // Simulate some work
+                c = a;
+                a = c + 1;
+            });
+
+            var a = 1;
+            anonymous.Invoke(ref a);
+        }
+    }
+
+    [Benchmark]
+    [BenchmarkCategory("10000")]
+    public void AnonymousClosure_Converted_10000x() {
+        for (int i = 0; i < c_iterationCount; i++) {
+            var context = i;
+            var anonymous = Closure.Action(context, (int c) => {
+                // Simulate some work
+                var result = c + 1;
+            }).AsAnonymous();
+            anonymous.Invoke();
+        }
+    }
+
+    [Benchmark]
+    [BenchmarkCategory("10000")]
+    public void AnonymousClosure_ConvertBack_10000x() {
+        for (int i = 0; i < c_iterationCount; i++) {
+            var context = i;
+            var anonymous = Closure.Action(context, (int c) => {
+                // Simulate some work
+                var result = c + 1;
+            }).AsAnonymous();
+            anonymous.AsClosureAction<int>().Invoke();
+        }
+    }
+
+    [Benchmark]
+    [BenchmarkCategory("10000")]
+    public void AnonymousClosure_ConvertBackWithIsCheck_10000x() {
+        for (int i = 0; i < c_iterationCount; i++) {
+            var context = i;
+            var anonymous = Closure.Action(context, (int c) => {
+                // Simulate some work
+                var result = c + 1;
+            }).AsAnonymous();
+
+            if (anonymous.Is<ClosureAction<int>>())
+                anonymous.AsClosureAction<int>().Invoke();
+            else {
+                throw new InvalidOperationException();
+            }
+        }
+    }
+
+    [Benchmark]
+    [BenchmarkCategory("10000")]
+    public void AnonymousClosure_BoxedValue_10000x() {
+        for (int i = 0; i < c_iterationCount; i++) {
+            var context = (i, 0);
+            var anonymous = Closure.Action(context, ((int, int) c) => {
+                // Simulate some work
+                var result = c.Item1 + 1;
+            }).AsAnonymous();
+            anonymous.AsClosureAction<(int, int)>().Invoke();
+        }
+    }
+
+    [Benchmark]
+    [BenchmarkCategory("10000")]
+    public void AnonymousClosure_Add1Delegate_10000x() {
+        for (int i = 0; i < c_iterationCount; i++) {
+            var context = i;
+            var anonymous = AnonymousClosure.Create(AnonymousValue.From(context), (int c) => {
+                // Simulate some work
+                var result = c + 1;
+            });
+            anonymous.Add((int c) => {
+                // Additional work
+                var additionalResult = c + 2;
+            });
+
+            anonymous.Invoke();
+        }
+    }
+
+    [Benchmark]
+    [BenchmarkCategory("10000")]
+    public void AnonymousClosure_Add5Delegate_10000x() {
+        for (int i = 0; i < c_iterationCount; i++) {
+            var context = i;
+            var anonymous = AnonymousClosure.Create(AnonymousValue.From(context), (int c) => {
+                // Simulate some work
+                var result = c + 1;
+            });
+
+            for (int j = 0; j < 5; j++) {
+                anonymous.Add((int c) => {
+                    // Additional work
+                    var additionalResult = c + 2;
+                });
+            }
+
+            anonymous.Invoke();
+        }
+    }
+
+    [Benchmark]
+    [BenchmarkCategory("10000")]
+    public void AnonymousClosure_AddRemove1Delegate_10000x() {
+        for (int i = 0; i < c_iterationCount; i++) {
+            var context = i;
+            var anonymous = AnonymousClosure.Create(AnonymousValue.From(context), Handler);
+            anonymous.Add(Handler);
+            anonymous.Remove(Handler);
+
+            anonymous.Invoke();
+        }
+
+        return;
+
+        static void Handler(int c) {
+            // Simulate some work
+            var result = c + 1;
+        }
+    }
+
+    [Benchmark]
+    [BenchmarkCategory("10000")]
+    public void AnonymousClosure_AddRemove5Delegate_10000x() {
+        for (int i = 0; i < c_iterationCount; i++) {
+            var context = i;
+            var anonymous = AnonymousClosure.Create(AnonymousValue.From(context), Handler);
+
+            // Add multiple actions
+            for (int j = 0; j < 5; j++) {
+                anonymous.Add(Handler);
+            }
+
+            // Remove all but one
+            for (int j = 0; j < 5; j++) {
+                anonymous.Remove(Handler);
+            }
+
+            anonymous.Invoke();
+        }
+
+        return;
+
+        static void Handler(int c) {
+            // Simulate some work
+            var result = c + 1;
+        }
+    }
+}
+
 public class ForLoopBenchmarks {
     readonly List<Action> actions3 = new List<Action>(3);
     readonly List<ClosureAction<int>> closureActions3 = new List<ClosureAction<int>>(3);

@@ -38,8 +38,8 @@ namespace Closures {
             Delegate = action;
         }
 
-        public void Add(Action<TContext> action) => Delegate += action;
-        public void Remove(Action<TContext> action) => Delegate -= action;
+        public void Add(Action<TContext> @delegate) => Delegate += @delegate;
+        public void Remove(Action<TContext> @delegate) => Delegate -= @delegate;
     
         public void Invoke() => Delegate?.Invoke(Context);
     }
@@ -60,8 +60,8 @@ namespace Closures {
             Delegate = action;
         }
     
-        public void Add(Action<TContext, TArg> action) => Delegate += action;
-        public void Remove(Action<TContext, TArg> action) => Delegate -= action;
+        public void Add(Action<TContext, TArg> @delegate) => Delegate += @delegate;
+        public void Remove(Action<TContext, TArg> @delegate) => Delegate -= @delegate;
     
         public void Invoke(TArg arg) => Delegate?.Invoke(Context, arg);
     }
@@ -82,8 +82,8 @@ namespace Closures {
             Delegate = action;
         }
     
-        public void Add(RefActionWithNormalContext<TContext, TArg> action) => Delegate += action;
-        public void Remove(RefActionWithNormalContext<TContext, TArg> action) => Delegate -= action;
+        public void Add(RefActionWithNormalContext<TContext, TArg> @delegate) => Delegate += @delegate;
+        public void Remove(RefActionWithNormalContext<TContext, TArg> @delegate) => Delegate -= @delegate;
     
         public void Invoke(ref TArg arg) => Delegate?.Invoke(Context, ref arg);
         public void Invoke(TArg arg) => Invoke(ref arg);
@@ -116,8 +116,8 @@ namespace Closures {
             MutatingBehaviour = mutatingBehaviour;
         }
     
-        public void Add(RefAction<TContext> action) => Delegate += action;
-        public void Remove(RefAction<TContext> action) => Delegate -= action;
+        public void Add(RefAction<TContext> @delegate) => Delegate += @delegate;
+        public void Remove(RefAction<TContext> @delegate) => Delegate -= @delegate;
     
         public void Invoke() {
             if (MutatingBehaviour is MutatingClosureBehaviour.Retain) {
@@ -157,8 +157,8 @@ namespace Closures {
             MutatingBehaviour = mutatingBehaviour;
         }
     
-        public void Add(ActionWithRefContext<TContext, TArg> action) => Delegate += action;
-        public void Remove(ActionWithRefContext<TContext, TArg> action) => Delegate -= action;
+        public void Add(ActionWithRefContext<TContext, TArg> @delegate) => Delegate += @delegate;
+        public void Remove(ActionWithRefContext<TContext, TArg> @delegate) => Delegate -= @delegate;
     
         public void Invoke(TArg arg) {
             if (MutatingBehaviour is MutatingClosureBehaviour.Retain) {
@@ -199,8 +199,8 @@ namespace Closures {
             MutatingBehaviour = mutatingBehaviour;
         }
     
-        public void Add(RefAction<TContext, TArg> action) => Delegate += action;
-        public void Remove(RefAction<TContext, TArg> action) => Delegate -= action;
+        public void Add(RefAction<TContext, TArg> @delegate) => Delegate += @delegate;
+        public void Remove(RefAction<TContext, TArg> @delegate) => Delegate -= @delegate;
     
         public void Invoke(ref TArg arg) {
             if (MutatingBehaviour is MutatingClosureBehaviour.Retain) {
@@ -238,8 +238,8 @@ namespace Closures {
             Delegate = action;
         }
     
-        public void Add(RefAction<TContext> action) => Delegate += action;
-        public void Remove(RefAction<TContext> action) => Delegate -= action;
+        public void Add(RefAction<TContext> @delegate) => Delegate += @delegate;
+        public void Remove(RefAction<TContext> @delegate) => Delegate -= @delegate;
     
         public void Invoke() => Delegate?.Invoke(ref context);
     }
@@ -268,8 +268,8 @@ namespace Closures {
             Delegate = action;
         }
     
-        public void Add(ActionWithRefContext<TContext, TArg> action) => Delegate += action;
-        public void Remove(ActionWithRefContext<TContext, TArg> action) => Delegate -= action;
+        public void Add(ActionWithRefContext<TContext, TArg> @delegate) => Delegate += @delegate;
+        public void Remove(ActionWithRefContext<TContext, TArg> @delegate) => Delegate -= @delegate;
     
         public void Invoke(TArg arg) => Delegate?.Invoke(ref context, arg);
     }
@@ -298,8 +298,8 @@ namespace Closures {
             Delegate = action;
         }
     
-        public void Add(RefAction<TContext, TArg> action) => Delegate += action;
-        public void Remove(RefAction<TContext, TArg> action) => Delegate -= action;
+        public void Add(RefAction<TContext, TArg> @delegate) => Delegate += @delegate;
+        public void Remove(RefAction<TContext, TArg> @delegate) => Delegate -= @delegate;
     
         public void Invoke(ref TArg arg) => Delegate?.Invoke(ref context, ref arg);
         public void Invoke(TArg arg) => Delegate?.Invoke(ref context, ref arg);

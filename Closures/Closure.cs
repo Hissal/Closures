@@ -23,7 +23,7 @@
     }
 
     public interface IClosure {
-    
+
     }
     public interface IClosure<TContext> : IClosure {
         TContext Context { get; set; }
@@ -32,8 +32,8 @@
         TDelegate Delegate { get; set; }
         bool DelegateIsNull { get; }
     
-        void Add(TDelegate action);
-        void Remove(TDelegate action);
+        void Add(TDelegate @delegate);
+        void Remove(TDelegate @delegate);
     }
 
     /// <summary>

@@ -146,49 +146,49 @@ namespace Closures.Converting.Experimental {
 
         public static Type ResolveActionType<TContext, TDelegate>() where TDelegate : Delegate {
             if (typeof(TDelegate).IsGenericType is false)
-                return typeof(AnonymousClosure<TContext, TDelegate>);
+                return typeof(CustomClosure<TContext, TDelegate>);
 
             return typeof(TDelegate) switch {
                 { } type when type.GetGenericTypeDefinition() == typeof(Action<>) => typeof(ClosureAction<TContext>),
                 { } type when type.GetGenericTypeDefinition() == typeof(RefAction<>) => typeof(MutatingClosureAction<TContext>),
-                _ => typeof(AnonymousClosure<TContext, TDelegate>)
+                _ => typeof(CustomClosure<TContext, TDelegate>)
             };
         }
 
         public static Type ResolveActionType<TContext, TArg, TDelegate>() where TDelegate : Delegate {
             if (typeof(TDelegate).IsGenericType is false)
-                return typeof(AnonymousClosure<TContext, TDelegate>);
+                return typeof(CustomClosure<TContext, TDelegate>);
         
             return typeof(TDelegate) switch {
                 { } type when type.GetGenericTypeDefinition() == typeof(Action<,>) => typeof(ClosureAction<TContext, TArg>),
                 { } type when type.GetGenericTypeDefinition() == typeof(RefActionWithNormalContext<,>) => typeof(ClosureRefAction<TContext, TArg>),
                 { } type when type.GetGenericTypeDefinition() == typeof(ActionWithRefContext<,>) => typeof(MutatingClosureAction<TContext, TArg>),
                 { } type when type.GetGenericTypeDefinition() == typeof(RefAction<,>) => typeof(MutatingClosureRefAction<TContext, TArg>),
-                _ => typeof(AnonymousClosure<TContext, TDelegate>)
+                _ => typeof(CustomClosure<TContext, TDelegate>)
             };
         }
     
         public static Type ResolveFuncType<TContext, TResult, TDelegate>() where TDelegate : Delegate {
             if (typeof(TDelegate).IsGenericType is false)
-                return typeof(AnonymousClosure<TContext, TDelegate>);
+                return typeof(CustomClosure<TContext, TDelegate>);
         
             return typeof(TDelegate) switch {
                 { } type when type.GetGenericTypeDefinition() == typeof(Func<,>) => typeof(ClosureFunc<TContext, TResult>),
                 { } type when type.GetGenericTypeDefinition() == typeof(RefFunc<,>) => typeof(MutatingClosureFunc<TContext, TResult>),
-                _ => typeof(AnonymousClosure<TContext, TDelegate>)
+                _ => typeof(CustomClosure<TContext, TDelegate>)
             };
         }
     
         public static Type ResolveFuncType<TContext, TArg, TResult, TDelegate>() where TDelegate : Delegate {
             if (typeof(TDelegate).IsGenericType is false)
-                return typeof(AnonymousClosure<TContext, TDelegate>);
+                return typeof(CustomClosure<TContext, TDelegate>);
         
             return typeof(TDelegate) switch {
                 { } type when type.GetGenericTypeDefinition() == typeof(Func<,,>) => typeof(ClosureFunc<TContext, TArg, TResult>),
                 { } type when type.GetGenericTypeDefinition() == typeof(RefFuncWithNormalContext<,,>) => typeof(ClosureRefFunc<TContext, TArg, TResult>),
                 { } type when type.GetGenericTypeDefinition() == typeof(FuncWithRefContext<,,>) => typeof(MutatingClosureFunc<TContext, TArg, TResult>),
                 { } type when type.GetGenericTypeDefinition() == typeof(RefFunc<,,>) => typeof(MutatingClosureRefFunc<TContext, TArg, TResult>),
-                _ => typeof(AnonymousClosure<TContext, TDelegate>)
+                _ => typeof(CustomClosure<TContext, TDelegate>)
             };
         }
     
@@ -202,9 +202,9 @@ namespace Closures.Converting.Experimental {
 #if DEBUG
                 throw new ArgumentException("Delegate type must be a generic type with atleast one generic argument", nameof(delegateType));
 #else
-            return typeof(AnonymousClosure<,>).MakeGenericType(typeof(object), delegateType);
+            return typeof(CustomClosure<,>).MakeGenericType(typeof(object), delegateType);
 #endif
-            return typeof(AnonymousClosure<,>).MakeGenericType(genericArgs[0], delegateType);
+            return typeof(CustomClosure<,>).MakeGenericType(genericArgs[0], delegateType);
         }
     
         public static ClosureDelegateType ResolveClosureDelegateType<TDelegate>() where TDelegate : Delegate => 
@@ -250,11 +250,11 @@ namespace Closures.Converting.Experimental {
             return genericArgs[0];
         }
 
-        public static bool IsOfType<TClosure>(IAnonymousClosure anonymousClosure) => 
-            IsOfType(typeof(TClosure), anonymousClosure);
+        public static bool IsOfType<TClosure>(ICustomClosure customClosure) => 
+            IsOfType(typeof(TClosure), customClosure);
 
-        public static bool IsOfType(Type closureType, IAnonymousClosure anonymousClosure,  ClosureTypeResolver? resolver = null) {
-            var delegateType = anonymousClosure.GetType().GetProperty("Delegate")?.PropertyType!;
+        public static bool IsOfType(Type closureType, ICustomClosure customClosure,  ClosureTypeResolver? resolver = null) {
+            var delegateType = customClosure.GetType().GetProperty("Delegate")?.PropertyType!;
 
             resolver ??= DefaultResolver;
             var type = resolver.Resolve(delegateType);
