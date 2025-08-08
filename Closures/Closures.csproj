@@ -33,5 +33,9 @@
         <PackagePath>Logo_128x128.png</PackagePath>
       </None>
     </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Converting\" />
+    </ItemGroup>
     
 </Project>
