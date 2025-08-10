@@ -1,4 +1,4 @@
-﻿namespace Closures;
+﻿namespace Closures.Anonymous;
 
 /// <summary>
 /// Represents an anonymous closure that encapsulates a delegate with no arguments and no return value,

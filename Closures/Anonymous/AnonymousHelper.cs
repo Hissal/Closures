@@ -1,6 +1,6 @@
 ﻿using System.Collections.Concurrent;
 
-namespace Closures;
+namespace Closures.Anonymous;
 
 /// <summary>
 /// Provides utility methods for working with anonymous closures.

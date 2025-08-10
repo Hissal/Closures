@@ -1,4 +1,4 @@
-﻿namespace Closures;
+﻿namespace Closures.Anonymous;
 
 /// <summary>
 /// Whether the closure should mutate the context or reset it after invocation.

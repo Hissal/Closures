@@ -1,4 +1,4 @@
-﻿namespace Closures;
+﻿namespace Closures.Anonymous;
 
 public static class AnonymousClosureConversionExtensions {
     // Conversion to AnonymousClosure

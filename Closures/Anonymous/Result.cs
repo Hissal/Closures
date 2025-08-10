@@ -1,6 +1,6 @@
 ﻿// ReSharper disable ConvertToPrimaryConstructor
 
-namespace Closures;
+namespace Closures.Anonymous;
 
 /// <summary>
 /// Represents the result of an operation, indicating success or failure and an optional exception.

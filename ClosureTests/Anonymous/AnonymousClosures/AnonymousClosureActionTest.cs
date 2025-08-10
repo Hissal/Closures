@@ -1,4 +1,5 @@
 ﻿using Closures;
+using Closures.Anonymous;
 
 namespace ClosureTests.Anonymous.AnonymousClosures;
 

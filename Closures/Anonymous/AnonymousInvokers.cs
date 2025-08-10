@@ -1,8 +1,9 @@
 ﻿using System.Collections.Concurrent;
 using System.Linq.Expressions;
+
 // ReSharper disable UseCollectionExpression
 
-namespace Closures;
+namespace Closures.Anonymous;
 
 /// <summary>
 /// Provides dynamic invoker delegates for anonymous closure actions and functions.
@@ -49,11 +50,11 @@ public static class AnonymousInvokers {
     /// The invoker will handle both normal and mutating (ref context) actions.
     /// </summary>
     /// <param name="delegate">The closure delegate to invoke.</param>
-    /// <returns>An <see cref="ActionInvoker"/> that can invoke the closure with a context and mutating behaviour.</returns>
-    /// <exception cref="InvalidOperationException">
+    /// <returns>An <see cref="InvalidOperationException"/> that can invoke the closure with a context and mutating behaviour.</returns>
+    /// <exception cref="ArgumentException">
     /// Thrown if the delegate type does not have a context type.
     /// </exception>
-    /// <exception cref="ArgumentException">
+    /// <exception cref="ActionInvoker">
     /// Thrown if the delegate type does not match the expected signature for an anonymous action invoker.
     /// </exception>
     public static ActionInvoker GetActionInvoker(Delegate @delegate) {
@@ -160,14 +161,14 @@ public static class AnonymousInvokers {
     /// </summary>
     /// <typeparam name="TArg">The type of the argument passed to the closure.</typeparam>
     /// <param name="delegate">The closure delegate to invoke.</param>
-    /// <returns>An <see cref="ActionInvoker{TArg}"/> that can invoke the closure with a context, mutating behaviour, and argument.</returns>
+    /// <returns>An <see cref="InvalidCastException"/> that can invoke the closure with a context, mutating behaviour, and argument.</returns>
     /// <exception cref="InvalidCastException">
     /// Thrown if the delegate argument type does not match <typeparamref name="TArg"/>.
     /// </exception>
-    /// <exception cref="InvalidOperationException">
+    /// <exception cref="ArgumentException">
     /// Thrown if the delegate type does not have a context or argument type.
     /// </exception>
-    /// <exception cref="ArgumentException">
+    /// <exception cref="ActionInvoker{TArg}">
     /// Thrown if the delegate type does not match the expected signature for an anonymous action invoker with an argument.
     /// </exception>
     public static ActionInvoker<TArg> GetActionInvoker<TArg>(Delegate @delegate) {
@@ -286,14 +287,14 @@ public static class AnonymousInvokers {
     /// </summary>
     /// <typeparam name="TReturn">The return type of the closure function.</typeparam>
     /// <param name="delegate">The closure delegate to invoke.</param>
-    /// <returns>An <see cref="FuncInvoker{TReturn}"/> that can invoke the closure with a context and mutating behaviour, returning a value.</returns>
+    /// <returns>An <see cref="InvalidCastException"/> that can invoke the closure with a context and mutating behaviour, returning a value.</returns>
     /// <exception cref="InvalidCastException">
     /// Thrown if the delegate return type does not match <typeparamref name="TReturn"/>.
     /// </exception>
-    /// <exception cref="InvalidOperationException">
+    /// <exception cref="ArgumentException">
     /// Thrown if the delegate type does not have a context or return type.
     /// </exception>
-    /// <exception cref="ArgumentException">
+    /// <exception cref="FuncInvoker{TReturn}">
     /// Thrown if the delegate type does not match the expected signature for an anonymous function invoker.
     /// </exception>>
     public static FuncInvoker<TReturn> GetFuncInvoker<TReturn>(Delegate @delegate) {
@@ -416,14 +417,14 @@ public static class AnonymousInvokers {
     /// <typeparam name="TArg">The type of the argument passed to the closure.</typeparam>
     /// <typeparam name="TReturn">The return type of the closure function.</typeparam>
     /// <param name="delegate">The closure delegate to invoke.</param>
-    /// <returns>An <see cref="FuncInvoker{TArg,TReturn}"/> that can invoke the closure with a context, mutating behaviour, and argument, returning a value.</returns>
+    /// <returns>An <see cref="InvalidCastException"/> that can invoke the closure with a context, mutating behaviour, and argument, returning a value.</returns>
     /// <exception cref="InvalidCastException">
-    /// Thrown if the delegate argument or return type does not match <typeparamref name="TArg"/> or <typeparamref name="TReturn"/>.
-    /// </exception>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown if the delegate type does not have a context, argument, or return type.
+    /// Thrown if the delegate argument or return type does not match <typeparamref name="TReturn"/> or <typeparamref name="TReturn"/>.
     /// </exception>
     /// <exception cref="ArgumentException">
+    /// Thrown if the delegate type does not have a context, argument, or return type.
+    /// </exception>
+    /// <exception cref="FuncInvoker{TArg,TReturn}">
     /// Thrown if the delegate type does not match the expected signature for an anonymous function invoker with an argument.
     /// </exception>
     public static FuncInvoker<TArg, TReturn> GetFuncInvoker<TArg, TReturn>(Delegate @delegate) {

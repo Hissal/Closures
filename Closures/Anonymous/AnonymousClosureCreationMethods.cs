@@ -1,4 +1,4 @@
-﻿namespace Closures;
+﻿namespace Closures.Anonymous;
 
 public partial record struct AnonymousClosure {
     /// <summary>

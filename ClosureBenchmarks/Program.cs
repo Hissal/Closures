@@ -2,6 +2,7 @@
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Running;
 using Closures;
+using Closures.Anonymous;
 
 namespace ClosureBenchmarks;
 

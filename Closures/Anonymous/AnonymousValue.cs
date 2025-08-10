@@ -1,7 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace Closures;
+namespace Closures.Anonymous;
 
 internal enum ValueType {
     Reference,
