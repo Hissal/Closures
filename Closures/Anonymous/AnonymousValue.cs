@@ -48,6 +48,9 @@ internal static class ValueTypeExtensions {
     }
 }
 
+/// <summary>
+/// A struct that can hold any value or reference type.
+/// </summary>
 [StructLayout(LayoutKind.Explicit)]
 public struct AnonymousValue : IEquatable<AnonymousValue> {
     [FieldOffset(0)] ValueType ValueType;
@@ -70,6 +73,13 @@ public struct AnonymousValue : IEquatable<AnonymousValue> {
     [FieldOffset(16)] double doubleValue;
     [FieldOffset(16)] decimal decimalValue;
 
+    /// <summary>
+    /// Creates an AnonymousValue from a value of any type.
+    /// The type must be a value type or a reference type that is not null.
+    /// </summary>
+    /// <param name="value">The value to create from</param>
+    /// <typeparam name="T">Type of the value</typeparam>
+    /// <returns></returns>
     public static AnonymousValue From<T>(T value) where T : notnull {
         return typeof(T) switch {
             { } t when t == typeof(char) => Char(Unsafe.As<T, char>(ref value)),
@@ -91,10 +101,19 @@ public struct AnonymousValue : IEquatable<AnonymousValue> {
             _ => Unknown(value)
         };
     }
-
-
+    
+    /// <summary>
+    /// Checks if the current AnonymousValue is of a specific type.
+    /// </summary>
+    /// <typeparam name="T">The type to check against</typeparam>
     public bool Is<T>() => typeof(T) == GetUnderlyingType();
-
+    
+    /// <summary>
+    /// Returns the value as the specified type <typeparamref name="T"/> if possible.
+    /// Throws <see cref="InvalidCastException"/> if the type does not match.
+    /// </summary>
+    /// <typeparam name="T">The type to cast to</typeparam>
+    /// <returns>The value as type <typeparamref name="T"/></returns>
     public T As<T>() {
         if (ValueType.IsOrReference<T>()) {
             return ValueType switch {
@@ -117,7 +136,7 @@ public struct AnonymousValue : IEquatable<AnonymousValue> {
 
                 ValueType.Reference => unknownValue switch {
                     T t => t,
-                    null => throw new ArgumentNullException(nameof(unknownValue)),
+                    null => throw new NullReferenceException("AnonymousValue is null."),
                     _ => InvalidCast()
                 },
                 _ => InvalidCast()
@@ -129,6 +148,11 @@ public struct AnonymousValue : IEquatable<AnonymousValue> {
         T InvalidCast() => throw new InvalidCastException($"Cannot cast AnonymousValue to {typeof(T).Name}.");
     }
 
+    /// <summary>
+    /// Sets the value of this <see cref="AnonymousValue"/> to the specified value.
+    /// </summary>
+    /// <param name="value">The value to set.</param>
+    /// <typeparam name="T">The type of the value.</typeparam>
     public void SetValue<T>(T value) {
         switch (value) {
             case char c:
@@ -195,7 +219,11 @@ public struct AnonymousValue : IEquatable<AnonymousValue> {
         }
     }
 
-    public Type? GetUnderlyingType() {
+    /// <summary>
+    /// Gets the underlying type of the value stored in this <see cref="AnonymousValue"/>.
+    /// </summary>
+    /// <returns>The <see cref="Type"/> of the stored value, or null if unknown.</returns>
+    public Type GetUnderlyingType() {
         return ValueType switch {
             ValueType.Char => typeof(char),
             ValueType.Bool => typeof(bool),
@@ -213,7 +241,11 @@ public struct AnonymousValue : IEquatable<AnonymousValue> {
             ValueType.Double => typeof(double),
             ValueType.Decimal => typeof(decimal),
 
-            _ => unknownValue?.GetType()
+            ValueType.Reference => unknownValue switch {
+                not null => unknownValue.GetType(),
+                null => throw new NullReferenceException("AnonymousValue is null.")
+            },
+            _ => throw new ArgumentOutOfRangeException()
         };
     }
 

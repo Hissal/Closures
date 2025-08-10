@@ -20,15 +20,15 @@ namespace Closures;
 /// </summary>
 public static class AnonymousInvokers {
     // Actions
-    public delegate void AnonymousActionInvoker(Delegate @delegate, ref AnonymousValue context, MutatingBehaviour mutatingBehaviour);
-    public delegate void AnonymousActionInvoker<TArg>(Delegate @delegate, ref AnonymousValue context, MutatingBehaviour mutatingBehaviour, ref TArg arg);
+    public delegate void ActionInvoker(Delegate @delegate, ref AnonymousValue context, MutatingBehaviour mutatingBehaviour);
+    public delegate void ActionInvoker<TArg>(Delegate @delegate, ref AnonymousValue context, MutatingBehaviour mutatingBehaviour, ref TArg arg);
     
-    static readonly ConcurrentDictionary<Type, AnonymousActionInvoker> s_actionInvokers = new();
+    static readonly ConcurrentDictionary<Type, ActionInvoker> s_actionInvokers = new();
     static readonly ConcurrentDictionary<Type, Delegate> s_argActionInvokers = new();
     
     // Funcs
-    public delegate TReturn AnonymousFuncInvoker<out TReturn>(Delegate @delegate, ref AnonymousValue context, MutatingBehaviour mutatingBehaviour);
-    public delegate TReturn AnonymousFuncInvoker<TArg, out TReturn>(Delegate @delegate, ref AnonymousValue context, MutatingBehaviour mutatingBehaviour, ref TArg arg);
+    public delegate TReturn FuncInvoker<out TReturn>(Delegate @delegate, ref AnonymousValue context, MutatingBehaviour mutatingBehaviour);
+    public delegate TReturn FuncInvoker<TArg, out TReturn>(Delegate @delegate, ref AnonymousValue context, MutatingBehaviour mutatingBehaviour, ref TArg arg);
     
     static readonly ConcurrentDictionary<Type, Delegate> s_funcInvokers = new();
     static readonly ConcurrentDictionary<Type, Delegate> s_argFuncInvokers = new();
@@ -49,21 +49,21 @@ public static class AnonymousInvokers {
     /// The invoker will handle both normal and mutating (ref context) actions.
     /// </summary>
     /// <param name="delegate">The closure delegate to invoke.</param>
-    /// <returns>An <see cref="AnonymousActionInvoker"/> that can invoke the closure with a context and mutating behaviour.</returns>
+    /// <returns>An <see cref="ActionInvoker"/> that can invoke the closure with a context and mutating behaviour.</returns>
     /// <exception cref="InvalidOperationException">
     /// Thrown if the delegate type does not have a context type.
     /// </exception>
     /// <exception cref="ArgumentException">
     /// Thrown if the delegate type does not match the expected signature for an anonymous action invoker.
     /// </exception>
-    public static AnonymousActionInvoker GetActionInvoker(Delegate @delegate) {
+    public static ActionInvoker GetActionInvoker(Delegate @delegate) {
         if (!AnonymousHelper.IsAction(@delegate))
             throw new ArgumentException($"Delegate '{@delegate.GetType()}' is not a valid action.");
         
         return s_actionInvokers.GetOrAdd(@delegate.GetType(), CreateActionInvoker);
     }
 
-    static AnonymousActionInvoker CreateActionInvoker(Type delegateType) {
+    static ActionInvoker CreateActionInvoker(Type delegateType) {
         // delegate type, context and argument types
         var genericArguments = AnonymousHelper.GetGenericArguments(delegateType);
             
@@ -104,7 +104,7 @@ public static class AnonymousInvokers {
             );
                 
             var lambda = 
-                Expression.Lambda<AnonymousActionInvoker>(
+                Expression.Lambda<ActionInvoker>(
                     invokeExpr, delegateParam, contextParam, mutatingBehaviourParam
                 );
                 
@@ -146,7 +146,7 @@ public static class AnonymousInvokers {
             );
 
             var lambda = 
-                Expression.Lambda<AnonymousActionInvoker>(
+                Expression.Lambda<ActionInvoker>(
                     block, delegateParam, contextParam, mutatingBehaviourParam
                 );
                 
@@ -160,7 +160,7 @@ public static class AnonymousInvokers {
     /// </summary>
     /// <typeparam name="TArg">The type of the argument passed to the closure.</typeparam>
     /// <param name="delegate">The closure delegate to invoke.</param>
-    /// <returns>An <see cref="AnonymousActionInvoker{TArg}"/> that can invoke the closure with a context, mutating behaviour, and argument.</returns>
+    /// <returns>An <see cref="ActionInvoker{TArg}"/> that can invoke the closure with a context, mutating behaviour, and argument.</returns>
     /// <exception cref="InvalidCastException">
     /// Thrown if the delegate argument type does not match <typeparamref name="TArg"/>.
     /// </exception>
@@ -170,14 +170,14 @@ public static class AnonymousInvokers {
     /// <exception cref="ArgumentException">
     /// Thrown if the delegate type does not match the expected signature for an anonymous action invoker with an argument.
     /// </exception>
-    public static AnonymousActionInvoker<TArg> GetActionInvoker<TArg>(Delegate @delegate) {
+    public static ActionInvoker<TArg> GetActionInvoker<TArg>(Delegate @delegate) {
         if (!AnonymousHelper.IsAction(@delegate))
             throw new ArgumentException($"Delegate '{@delegate.GetType()}' is not a valid action.");
         
-        return (AnonymousActionInvoker<TArg>)s_argActionInvokers.GetOrAdd(@delegate.GetType(), CreateActionInvoker<TArg>);
+        return (ActionInvoker<TArg>)s_argActionInvokers.GetOrAdd(@delegate.GetType(), CreateActionInvoker<TArg>);
     }
 
-    static AnonymousActionInvoker<TArg> CreateActionInvoker<TArg>(Type delegateType) {
+    static ActionInvoker<TArg> CreateActionInvoker<TArg>(Type delegateType) {
         // delegate context and argument types
         var genericArguments = AnonymousHelper.GetGenericArguments(delegateType);
         
@@ -230,7 +230,7 @@ public static class AnonymousInvokers {
             );
             
             var lambda = 
-                Expression.Lambda<AnonymousActionInvoker<TArg>>(
+                Expression.Lambda<ActionInvoker<TArg>>(
                     invokeExpr, delegateParam, contextParam, mutatingBehaviourParam, argParam
                 );
             
@@ -272,7 +272,7 @@ public static class AnonymousInvokers {
             );
 
             var lambda =
-                Expression.Lambda<AnonymousActionInvoker<TArg>>(
+                Expression.Lambda<ActionInvoker<TArg>>(
                     block, delegateParam, contextParam, mutatingBehaviourParam, argParam
                 );
 
@@ -280,13 +280,13 @@ public static class AnonymousInvokers {
         }
     }
 
-/// <summary>
+    /// <summary>
     /// Gets an invoker delegate for an anonymous function closure with the specified return type.
     /// The invoker will handle both normal and mutating (ref context) functions.
     /// </summary>
     /// <typeparam name="TReturn">The return type of the closure function.</typeparam>
     /// <param name="delegate">The closure delegate to invoke.</param>
-    /// <returns>An <see cref="AnonymousFuncInvoker{TReturn}"/> that can invoke the closure with a context and mutating behaviour, returning a value.</returns>
+    /// <returns>An <see cref="FuncInvoker{TReturn}"/> that can invoke the closure with a context and mutating behaviour, returning a value.</returns>
     /// <exception cref="InvalidCastException">
     /// Thrown if the delegate return type does not match <typeparamref name="TReturn"/>.
     /// </exception>
@@ -296,14 +296,14 @@ public static class AnonymousInvokers {
     /// <exception cref="ArgumentException">
     /// Thrown if the delegate type does not match the expected signature for an anonymous function invoker.
     /// </exception>>
-    public static AnonymousFuncInvoker<TReturn> GetFuncInvoker<TReturn>(Delegate @delegate) {
+    public static FuncInvoker<TReturn> GetFuncInvoker<TReturn>(Delegate @delegate) {
         if (!AnonymousHelper.IsFunc(@delegate))
             throw new ArgumentException($"Delegate '{@delegate.GetType()}' is not a valid function.");
     
-        return (AnonymousFuncInvoker<TReturn>)s_funcInvokers.GetOrAdd(@delegate.GetType(), CreateFuncInvoker<TReturn>);
+        return (FuncInvoker<TReturn>)s_funcInvokers.GetOrAdd(@delegate.GetType(), CreateFuncInvoker<TReturn>);
     }
 
-    static AnonymousFuncInvoker<TReturn> CreateFuncInvoker<TReturn>(Type delegateType) {
+    static FuncInvoker<TReturn> CreateFuncInvoker<TReturn>(Type delegateType) {
         // delegate context and return types
         var genericArguments = AnonymousHelper.GetGenericArguments(delegateType);
         
@@ -354,7 +354,7 @@ public static class AnonymousInvokers {
             );
         
             var lambda = 
-                Expression.Lambda<AnonymousFuncInvoker<TReturn>>(
+                Expression.Lambda<FuncInvoker<TReturn>>(
                     invokeExpr, delegateParam, contextParam, mutatingBehaviourParam
                 );
         
@@ -401,7 +401,7 @@ public static class AnonymousInvokers {
             );
 
             var lambda =
-                Expression.Lambda<AnonymousFuncInvoker<TReturn>>(
+                Expression.Lambda<FuncInvoker<TReturn>>(
                     block, delegateParam, contextParam, mutatingBehaviourParam
                 );
 
@@ -416,7 +416,7 @@ public static class AnonymousInvokers {
     /// <typeparam name="TArg">The type of the argument passed to the closure.</typeparam>
     /// <typeparam name="TReturn">The return type of the closure function.</typeparam>
     /// <param name="delegate">The closure delegate to invoke.</param>
-    /// <returns>An <see cref="AnonymousFuncInvoker{TArg, TReturn}"/> that can invoke the closure with a context, mutating behaviour, and argument, returning a value.</returns>
+    /// <returns>An <see cref="FuncInvoker{TArg,TReturn}"/> that can invoke the closure with a context, mutating behaviour, and argument, returning a value.</returns>
     /// <exception cref="InvalidCastException">
     /// Thrown if the delegate argument or return type does not match <typeparamref name="TArg"/> or <typeparamref name="TReturn"/>.
     /// </exception>
@@ -426,14 +426,14 @@ public static class AnonymousInvokers {
     /// <exception cref="ArgumentException">
     /// Thrown if the delegate type does not match the expected signature for an anonymous function invoker with an argument.
     /// </exception>
-    public static AnonymousFuncInvoker<TArg, TReturn> GetFuncInvoker<TArg, TReturn>(Delegate @delegate) {
+    public static FuncInvoker<TArg, TReturn> GetFuncInvoker<TArg, TReturn>(Delegate @delegate) {
         if (!AnonymousHelper.IsFunc(@delegate))
             throw new ArgumentException($"Delegate '{@delegate.GetType()}' is not a valid function.");
         
-        return (AnonymousFuncInvoker<TArg, TReturn>)s_argFuncInvokers.GetOrAdd(@delegate.GetType(), CreateFuncInvoker<TArg, TReturn>);
+        return (FuncInvoker<TArg, TReturn>)s_argFuncInvokers.GetOrAdd(@delegate.GetType(), CreateFuncInvoker<TArg, TReturn>);
     }
 
-    static AnonymousFuncInvoker<TArg, TReturn> CreateFuncInvoker<TArg, TReturn>(Type delegateType) {
+    static FuncInvoker<TArg, TReturn> CreateFuncInvoker<TArg, TReturn>(Type delegateType) {
         // delegate context and argument types
         var genericArguments = AnonymousHelper.GetGenericArguments(delegateType);
         var contextType = genericArguments[0] ??
@@ -494,7 +494,7 @@ public static class AnonymousInvokers {
             );
             
             var lambda = 
-                Expression.Lambda<AnonymousFuncInvoker<TArg, TReturn>>(
+                Expression.Lambda<FuncInvoker<TArg, TReturn>>(
                     invokeExpr, delegateParam, contextParam, mutatingBehaviourParam, argParam
                 );
             
@@ -542,7 +542,7 @@ public static class AnonymousInvokers {
             );
             
             var lambda = 
-                Expression.Lambda<AnonymousFuncInvoker<TArg, TReturn>>(
+                Expression.Lambda<FuncInvoker<TArg, TReturn>>(
                     block, delegateParam, contextParam, mutatingBehaviourParam, argParam
                 );
             

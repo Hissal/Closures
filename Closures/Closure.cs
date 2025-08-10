@@ -1,26 +1,53 @@
 ﻿using System.Collections.Concurrent;
 
 namespace Closures {
-
+    /// <summary>
+    /// Marker interface for closure types.
+    /// </summary>
     public interface IClosure {
 
     }
+    
+    /// <summary>
+    /// Represents a closure that encapsulates a context and a delegate.
+    /// </summary>
+    /// <typeparam name="TContext"> Type of the context to capture </typeparam>
+    /// <typeparam name="TDelegate"> Type of the delegate to invoke </typeparam>
     public interface IClosure<TContext, TDelegate> : IClosure where TDelegate : Delegate {
         TContext Context { get; init; }
         TDelegate Delegate { get; init; }
     }
     
+    /// <summary>
+    /// Marker interface for closures that can mutate the context.
+    /// </summary>
     public interface IMutatingClosure {
         
     }
 
+    /// <summary>
+    /// Interface for closures that provide a reference to the context.
+    /// </summary>
+    /// <typeparam name="TContext"></typeparam>
     public interface IRefClosure<TContext> {
         ref TContext RefContext { get; }
     }
     
+    /// <summary>
+    /// Factory class for creating closure structs that encapsulate context and delegate logic.
+    /// </summary>
     public static class ClosureFactory {
+        /// <summary>
+        /// Creates a new closure struct of type <typeparamref name="TClosure"/> that encapsulates the specified context and delegate.
+        /// </summary>
+        /// <typeparam name="TContext">The type of the context to capture.</typeparam>
+        /// <typeparam name="TDelegate">The type of the delegate to invoke.</typeparam>
+        /// <typeparam name="TClosure">The closure struct type implementing <see cref="IClosure{TContext, TDelegate}"/>.</typeparam>
+        /// <param name="context">The context value to capture in the closure.</param>
+        /// <param name="delegate">The delegate to associate with the closure.</param>
+        /// <returns>A new <typeparamref name="TClosure"/> instance with its <c>Context</c> and <c>Delegate</c> properties initialized.</returns>
         public static TClosure Create<TContext, TDelegate, TClosure>(TContext context, TDelegate @delegate)
-            where TClosure : struct, IClosure<TContext, TDelegate> where TDelegate : Delegate 
+            where TClosure : struct, IClosure<TContext, TDelegate> where TDelegate : Delegate
             => new TClosure() {
                 Delegate = @delegate,
                 Context = context
@@ -57,6 +84,9 @@ namespace Closures {
             ClosureFactory.Create<TContext, RefFuncWithNormalContext<TContext, TArg, TResult>, ClosureRefFunc<TContext, TArg, TResult>>(context, func);
     }
 
+    /// <summary>
+    /// Provides factory methods for creating mutating closure structs that encapsulate context and delegate logic.
+    /// </summary>
     public struct MutatingClosure {
         /// <summary> Creates an <see cref="MutatingClosureAction{TContext}"/> with the specified context and action. </summary>
         public static MutatingClosureAction<TContext> Action<TContext>(TContext context, RefAction<TContext> action) =>
@@ -84,6 +114,9 @@ namespace Closures {
             ClosureFactory.Create<TContext, RefFunc<TContext, TArg, TResult>, MutatingClosureRefFunc<TContext, TArg, TResult>>(context, func);
     }
     
+    /// <summary>
+    /// Provides factory methods for creating ref closure structs that encapsulate a context by reference and delegate logic,
+    /// </summary>
     public struct RefClosure {
         /// <summary> Creates a <see cref="RefClosureAction{TContext}"/> with the specified ref context and action. </summary>
         public static RefClosureAction<TContext> Action<TContext>(ref TContext context, RefAction<TContext> action) =>
@@ -110,19 +143,53 @@ namespace Closures {
         public static RefClosureRefFunc<TContext, TArg, TResult> RefFunc<TContext, TArg, TResult>(ref TContext context, RefFunc<TContext, TArg, TResult> func) =>
             new RefClosureRefFunc<TContext, TArg, TResult>(ref context, func);
     }
-
+    
     public static class ClosureManager {
         public static event Action? OnCacheClear;
         
+        /// <summary>
+        /// Clears all caches in the system.
+        /// </summary>
         public static void ClearCache() {
             OnCacheClear?.Invoke();
         }
     }
     
     public static class ClosureExtensions {
+        /// <summary>
+        /// Converts a <see cref="ClosureAction{TContext}"/> to a parameterless <see cref="Action"/> delegate.
+        /// </summary>
+        /// <typeparam name="TContext">The type of the captured context.</typeparam>
+        /// <param name="closure">The closure to convert.</param>
+        /// <returns>An <see cref="Action"/> that invokes the closure with its captured context.</returns>
         public static Action AsAction<TContext>(this ClosureAction<TContext> closure) => ClosureToAction<TContext>.AsAction(closure);
+
+        /// <summary>
+        /// Converts a <see cref="ClosureAction{TContext, TArg}"/> to an <see cref="Action{TArg}"/> delegate.
+        /// </summary>
+        /// <typeparam name="TContext">The type of the captured context.</typeparam>
+        /// <typeparam name="TArg">The type of the argument.</typeparam>
+        /// <param name="closure">The closure to convert.</param>
+        /// <returns>An <see cref="Action{TArg}"/> that invokes the closure with its captured context and the provided argument.</returns>
         public static Action<TArg> AsAction<TContext, TArg>(this ClosureAction<TContext, TArg> closure) => ClosureToAction<TContext, TArg>.AsAction(closure);
+
+        /// <summary>
+        /// Converts a <see cref="ClosureFunc{TContext, TResult}"/> to a parameterless <see cref="Func{TResult}"/> delegate.
+        /// </summary>
+        /// <typeparam name="TContext">The type of the captured context.</typeparam>
+        /// <typeparam name="TResult">The return type of the function.</typeparam>
+        /// <param name="closure">The closure to convert.</param>
+        /// <returns>A <see cref="Func{TResult}"/> that invokes the closure with its captured context and returns the result.</returns>
         public static Func<TResult> AsFunc<TContext, TResult>(this ClosureFunc<TContext, TResult> closure) => ClosureToFunc<TContext, TResult>.AsFunc(closure);
+
+        /// <summary>
+        /// Converts a <see cref="ClosureFunc{TContext, TArg, TResult}"/> to a <see cref="Func{TArg, TResult}"/> delegate.
+        /// </summary>
+        /// <typeparam name="TContext">The type of the captured context.</typeparam>
+        /// <typeparam name="TArg">The type of the argument.</typeparam>
+        /// <typeparam name="TResult">The return type of the function.</typeparam>
+        /// <param name="closure">The closure to convert.</param>
+        /// <returns>A <see cref="Func{TArg, TResult}"/> that invokes the closure with its captured context and the provided argument, returning the result.</returns>
         public static Func<TArg, TResult> AsFunc<TContext, TArg, TResult>(this ClosureFunc<TContext, TArg, TResult> closure) => ClosureToFunc<TContext, TArg, TResult>.AsFunc(closure);
     }
     
