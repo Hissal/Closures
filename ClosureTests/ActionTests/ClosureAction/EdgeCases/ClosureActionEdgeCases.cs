@@ -20,58 +20,12 @@ public class ClosureActionEdgeCases {
     }
     
     [Test]
-    public void ClosureAction_NullDelegate_Invoke_DoesNotThrow() {
+    public void ClosureAction_NullDelegate_Invoke_Throws() {
         int context = 5;
-        Assert.DoesNotThrow(() => {
-            var closure = Closure.Action(context, null);
+        Assert.Throws<NullReferenceException>(() => {
+            var closure = Closure.Action<int>(context, (Action<int>)null);
             closure.Invoke();
-        }, "Closure with null delegate should not throw an exception");
-    }
-    
-    [Test]
-    public void ClosureAction_NullDelegate_Add_DoesNotThrow() {
-        int context = 5;
-        var closure = Closure.Action(context, null);
-        
-        Assert.DoesNotThrow(() => {
-            closure.Add(ctx => Assert.That(ctx, Is.EqualTo(context)));
-            closure.Invoke();
-        }, "Adding a null delegate to a closure should not throw an exception");
-    }
-    
-    [Test]
-    public void ClosureAction_Add_NullDelegate_DoesNotThrow() {
-        int context = 5;
-        var closure = Closure.Action(context, ctx => Assert.That(ctx, Is.EqualTo(context)));
-        
-        Assert.DoesNotThrow(() => {
-            closure.Add(null);
-            closure.Invoke();
-        }, "Adding a null delegate to a closure should not throw an exception");
-    }
-    
-    [Test]
-    public void ClosureAction_NullDelegate_Remove_DoesNotThrow() {
-        int context = 5;
-        var closure = Closure.Action(context, null);
-        
-        void Handler(int ctx) { /* no-op */ } 
-        
-        Assert.DoesNotThrow(() => {
-            closure.Remove(Handler);
-            closure.Invoke();
-        }, "Adding a null delegate to a closure should not throw an exception");
-    }
-    
-    [Test]
-    public void ClosureAction_Remove_NullDelegate_DoesNotThrow() {
-        int context = 5;
-        var closure = Closure.Action(context, ctx => Assert.That(ctx, Is.EqualTo(context)));
-        
-        Assert.DoesNotThrow(() => {
-            closure.Remove(null);
-            closure.Invoke();
-        }, "Adding a null delegate to a closure should not throw an exception");
+        }, "Closure with null delegate should throw an exception");
     }
     
     [Test]
@@ -96,26 +50,5 @@ public class ClosureActionEdgeCases {
         catch (InvalidOperationException ex) {
             Assert.That(ex.Message, Is.EqualTo("Test exception"), "Caught exception message should match");
         }
-    }
-    
-    [Test]
-    public void ClosureAction_ConcurrentAddRemoveInvoke_IsThreadSafe() {
-        int context = 1;
-        int callSum = 0;
-        void Handler(int ctx) => Interlocked.Add(ref callSum, ctx);
-
-        var closure = Closure.Action(context, Handler);
-
-        var tasks = new List<Task>();
-        for (int i = 0; i < 10; i++) {
-            tasks.Add(Task.Run(() => closure.Add(Handler)));
-            tasks.Add(Task.Run(() => closure.Remove(Handler)));
-            tasks.Add(Task.Run(() => closure.Invoke()));
-        }
-
-        Task.WaitAll(tasks.ToArray());
-
-        // The exact value may vary, but should not throw or corrupt state
-        Assert.That(callSum, Is.GreaterThanOrEqualTo(0), "Call sum should be non-negative");
     }
 }

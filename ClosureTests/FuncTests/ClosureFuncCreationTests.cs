@@ -39,7 +39,7 @@ public class ClosureFuncCreationTests {
     public void ClosureRefFuncWithRefArg_CreatesCorrectly() {
         int context = 10;
         var func = new RefFuncWithNormalContext<int, int, int>(DummyFuncWithRefArg);
-        var closure = Closure.Func(context, func);
+        var closure = Closure.RefFunc(context, func);
         Assert.Multiple(() => {
             Assert.That(closure, Is.InstanceOf<IClosureRefFunc<int, int, int, RefFuncWithNormalContext<int, int, int>>>());
             Assert.That(closure.Context, Is.EqualTo(context));
@@ -51,7 +51,7 @@ public class ClosureFuncCreationTests {
     public void MutatingClosureFunc_CreatesCorrectly() {
         int context = 10;
         var func = new RefFunc<int, int>(DummyFuncWithRefContext);
-        var closure = Closure.Func(context, func);
+        var closure = MutatingClosure.Func(context, func);
         Assert.Multiple(() => {
             Assert.That(closure, Is.InstanceOf<IMutatingClosure>());
             Assert.That(closure, Is.InstanceOf<IClosureFunc<int, int, RefFunc<int, int>>>());
@@ -64,7 +64,7 @@ public class ClosureFuncCreationTests {
     public void MutatingClosureFuncWithArg_CreatesCorrectly() {
         int context = 10;
         var func = new FuncWithRefContext<int, int, int>(DummyFuncWithRefContextAndNormalArg);
-        var closure = Closure.Func(context, func);
+        var closure = MutatingClosure.Func(context, func);
         Assert.Multiple(() => {
             Assert.That(closure, Is.InstanceOf<IMutatingClosure>());
             Assert.That(closure, Is.InstanceOf<IClosureFunc<int, int, int, FuncWithRefContext<int, int, int>>>());
@@ -77,7 +77,7 @@ public class ClosureFuncCreationTests {
     public void MutatingClosureRefFuncWithRefArg_CreatesCorrectly() {
         int context = 10;
         var func = new RefFunc<int, int, int>(DummyFuncWithRefContextAndRefArg);
-        var closure = Closure.Func(context, func);
+        var closure = MutatingClosure.RefFunc(context, func);
         Assert.Multiple(() => {
             Assert.That(closure, Is.InstanceOf<IMutatingClosure>());
             Assert.That(closure, Is.InstanceOf<IClosureRefFunc<int, int, int, RefFunc<int, int, int>>>());
@@ -90,29 +90,50 @@ public class ClosureFuncCreationTests {
     public void RefClosureFunc_CreatesCorrectly() {
         int context = 10;
         var func = new RefFunc<int, int>(DummyFuncWithRefContext);
-        var closure = Closure.Func(ref context, func);
-        Assert.That(closure.Context, Is.EqualTo(context));
-        Assert.That(closure.RefContext, Is.EqualTo(context));
-        Assert.That(closure.Delegate, Is.EqualTo(func));
+        var closure = RefClosure.Func(ref context, func);
+        
+        var ctx = closure.Context;
+        var refCtx = closure.RefContext;
+        var del = closure.Delegate;
+        
+        Assert.Multiple(() => {
+            Assert.That(ctx, Is.EqualTo(context));
+            Assert.That(refCtx, Is.EqualTo(context));
+            Assert.That(del, Is.EqualTo(func));
+        });
     }
 
     [Test]
     public void RefClosureFuncWithArg_CreatesCorrectly() {
         int context = 10;
         var func = new FuncWithRefContext<int, int, int>(DummyFuncWithRefContextAndNormalArg);
-        var closure = Closure.Func(ref context, func);
-        Assert.That(closure.Context, Is.EqualTo(context));
-        Assert.That(closure.RefContext, Is.EqualTo(context));
-        Assert.That(closure.Delegate, Is.EqualTo(func));
+        var closure = RefClosure.Func(ref context, func);
+        
+        var ctx = closure.Context;
+        var refCtx = closure.RefContext;
+        var del = closure.Delegate;
+        
+        Assert.Multiple(() => {
+            Assert.That(ctx, Is.EqualTo(context));
+            Assert.That(refCtx, Is.EqualTo(context));
+            Assert.That(del, Is.EqualTo(func));
+        });
     }
 
     [Test]
     public void RefClosureRefFuncWithRefArg_CreatesCorrectly() {
         int context = 10;
         var func = new RefFunc<int, int, int>(DummyFuncWithRefContextAndRefArg);
-        var closure = Closure.Func(ref context, func);
-        Assert.That(closure.Context, Is.EqualTo(context));
-        Assert.That(closure.RefContext, Is.EqualTo(context));
-        Assert.That(closure.Delegate, Is.EqualTo(func));
+        var closure = RefClosure.RefFunc(ref context, func);
+        
+        var ctx = closure.Context;
+        var refCtx = closure.RefContext;
+        var del = closure.Delegate;
+        
+        Assert.Multiple(() => {
+            Assert.That(ctx, Is.EqualTo(context));
+            Assert.That(refCtx, Is.EqualTo(context));
+            Assert.That(del, Is.EqualTo(func));
+        });
     }
 }

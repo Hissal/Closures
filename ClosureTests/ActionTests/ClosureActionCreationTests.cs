@@ -10,7 +10,7 @@ public class ClosureActionCreationTests {
     public void DummyActionWithRefContext(ref int context) { }
     public void DummyActionWithRefContextAndNormalArg(ref int context, int arg) { }
     public void DummyActionWithRefContextAndRefArg(ref int context, ref int arg) { }
-    
+
     [Test]
     public void ClosureAction_CreatesCorrectly() {
         int context = 10;
@@ -41,7 +41,7 @@ public class ClosureActionCreationTests {
     public void ClosureRefAction_WithRefArg_CreatesCorrectly() {
         int context = 10;
         var action = new RefActionWithNormalContext<int, int>(DummyActionWithRefArg);
-        var closure = Closure.Action(context, action);
+        var closure = Closure.RefAction(context, action);
 
         Assert.Multiple(() => {
             Assert.That(closure, Is.InstanceOf<IClosureAction<int, int, RefActionWithNormalContext<int, int>>>());
@@ -54,7 +54,7 @@ public class ClosureActionCreationTests {
     public void MutatingClosureAction_CreatesCorrectly() {
         int context = 10;
         var action = new RefAction<int>(DummyActionWithRefContext);
-        var closure = Closure.Action(context, action);
+        var closure = MutatingClosure.Action(context, action);
 
         Assert.Multiple(() => {
             Assert.That(closure, Is.InstanceOf<IMutatingClosure>());
@@ -68,7 +68,7 @@ public class ClosureActionCreationTests {
     public void MutatingClosureAction_WithArg_CreatesCorrectly() {
         int context = 10;
         var action = new ActionWithRefContext<int, int>(DummyActionWithRefContextAndNormalArg);
-        var closure = Closure.Action(context, action);
+        var closure = MutatingClosure.Action(context, action);
 
         Assert.Multiple(() => {
             Assert.That(closure, Is.InstanceOf<IMutatingClosure>());
@@ -82,7 +82,7 @@ public class ClosureActionCreationTests {
     public void MutatingClosureRefAction_WithRefArg_CreatesCorrectly() {
         int context = 10;
         var action = new RefAction<int, int>(DummyActionWithRefContextAndRefArg);
-        var closure = Closure.Action(context, action);
+        var closure = MutatingClosure.RefAction(context, action);
 
         Assert.Multiple(() => {
             Assert.That(closure, Is.InstanceOf<IMutatingClosure>());
@@ -96,32 +96,50 @@ public class ClosureActionCreationTests {
     public void RefClosureAction_CreatesCorrectly() {
         int context = 10;
         var action = new RefAction<int>(DummyActionWithRefContext);
-        var closure = Closure.Action(ref context, action);
+        var closure = RefClosure.Action(ref context, action);
+
+        var ctx = closure.Context;
+        var refCtx = closure.RefContext;
+        var del = closure.Delegate;
         
-        Assert.That(closure.Context, Is.EqualTo(context));
-        Assert.That(closure.RefContext, Is.EqualTo(context));
-        Assert.That(closure.Delegate, Is.EqualTo(action));
+        Assert.Multiple(() => {
+            Assert.That(ctx, Is.EqualTo(context));
+            Assert.That(refCtx, Is.EqualTo(context));
+            Assert.That(del, Is.EqualTo(action));
+        });
     }
-    
+
     [Test]
     public void RefClosureAction_WithArg_CreatesCorrectly() {
         int context = 10;
         var action = new ActionWithRefContext<int, int>(DummyActionWithRefContextAndNormalArg);
-        var closure = Closure.Action(ref context, action);
+        var closure = RefClosure.Action(ref context, action);
         
-        Assert.That(closure.Context, Is.EqualTo(context));
-        Assert.That(closure.RefContext, Is.EqualTo(context));
-        Assert.That(closure.Delegate, Is.EqualTo(action));
+        var ctx = closure.Context;
+        var refCtx = closure.RefContext;
+        var del = closure.Delegate;
+
+        Assert.Multiple(() => {
+            Assert.That(ctx, Is.EqualTo(context));
+            Assert.That(refCtx, Is.EqualTo(context));
+            Assert.That(del, Is.EqualTo(action));
+        });
     }
-    
+
     [Test]
     public void RefClosureAction_WithRefArg_CreatesCorrectly() {
         int context = 10;
         var action = new RefAction<int, int>(DummyActionWithRefContextAndRefArg);
-        var closure = Closure.Action(ref context, action);
+        var closure = RefClosure.RefAction(ref context, action);
+        
+        var ctx = closure.Context;
+        var refCtx = closure.RefContext;
+        var del = closure.Delegate;
 
-        Assert.That(closure.Context, Is.EqualTo(context));
-        Assert.That(closure.RefContext, Is.EqualTo(context));
-        Assert.That(closure.Delegate, Is.EqualTo(action));
+        Assert.Multiple(() => {
+            Assert.That(ctx, Is.EqualTo(context));
+            Assert.That(refCtx, Is.EqualTo(context));
+            Assert.That(del, Is.EqualTo(action));
+        });
     }
 }

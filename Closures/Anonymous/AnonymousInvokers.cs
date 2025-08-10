@@ -1,4 +1,6 @@
-﻿using System.Linq.Expressions;
+﻿using System.Collections.Concurrent;
+using System.Linq.Expressions;
+// ReSharper disable UseCollectionExpression
 
 namespace Closures;
 
@@ -18,18 +20,29 @@ namespace Closures;
 /// </summary>
 public static class AnonymousInvokers {
     // Actions
-    public delegate void AnonymousActionInvoker(Delegate @delegate, ref AnonymousValue context, MutatingClosureBehaviour mutatingBehaviour);
-    public delegate void AnonymousActionInvoker<TArg>(Delegate @delegate, ref AnonymousValue context, MutatingClosureBehaviour mutatingBehaviour, ref TArg arg);
+    public delegate void AnonymousActionInvoker(Delegate @delegate, ref AnonymousValue context, MutatingBehaviour mutatingBehaviour);
+    public delegate void AnonymousActionInvoker<TArg>(Delegate @delegate, ref AnonymousValue context, MutatingBehaviour mutatingBehaviour, ref TArg arg);
     
-    static readonly Dictionary<Type, AnonymousActionInvoker> s_actionInvokers = new();
-    static readonly Dictionary<Type, Delegate> s_argActionInvokers = new();
+    static readonly ConcurrentDictionary<Type, AnonymousActionInvoker> s_actionInvokers = new();
+    static readonly ConcurrentDictionary<Type, Delegate> s_argActionInvokers = new();
     
     // Funcs
-    public delegate TReturn AnonymousFuncInvoker<out TReturn>(Delegate @delegate, ref AnonymousValue context, MutatingClosureBehaviour mutatingBehaviour);
-    public delegate TReturn AnonymousFuncInvoker<TArg, out TReturn>(Delegate @delegate, ref AnonymousValue context, MutatingClosureBehaviour mutatingBehaviour, ref TArg arg);
+    public delegate TReturn AnonymousFuncInvoker<out TReturn>(Delegate @delegate, ref AnonymousValue context, MutatingBehaviour mutatingBehaviour);
+    public delegate TReturn AnonymousFuncInvoker<TArg, out TReturn>(Delegate @delegate, ref AnonymousValue context, MutatingBehaviour mutatingBehaviour, ref TArg arg);
     
-    static readonly Dictionary<Type, Delegate> s_funcInvokers = new();
-    static readonly Dictionary<Type, Delegate> s_argFuncInvokers = new();
+    static readonly ConcurrentDictionary<Type, Delegate> s_funcInvokers = new();
+    static readonly ConcurrentDictionary<Type, Delegate> s_argFuncInvokers = new();
+    
+    static AnonymousInvokers() {
+        ClosureManager.OnCacheClear += ClearCache;
+    }
+
+    public static void ClearCache() {
+        s_actionInvokers.Clear();
+        s_argActionInvokers.Clear();
+        s_funcInvokers.Clear();
+        s_argFuncInvokers.Clear();
+    }
     
     /// <summary>
     /// Gets an invoker delegate for an anonymous action closure with the specified delegate type.
@@ -44,104 +57,103 @@ public static class AnonymousInvokers {
     /// Thrown if the delegate type does not match the expected signature for an anonymous action invoker.
     /// </exception>
     public static AnonymousActionInvoker GetActionInvoker(Delegate @delegate) {
-        var delegateType = @delegate.GetType();
+        if (!AnonymousHelper.IsAction(@delegate))
+            throw new ArgumentException($"Delegate '{@delegate.GetType()}' is not a valid action.");
         
-        if (!s_actionInvokers.TryGetValue(delegateType, out var invoker)) {
-            // delegate context and argument types
-            var genericArguments = AnonymousHelper.GetGenericArguments(@delegate);
-            
-            var contextType = genericArguments[0] ??
-                              throw new InvalidOperationException(
-                                  $"Delegate type '{delegateType.Name}' does not have a context type.");
-
-            // Parameters (AnonymousClosure, ref AnonymousValue)
-            var delegateParam = Expression.Parameter(typeof(Delegate), "delegate");
-            var contextParam = Expression.Parameter(typeof(AnonymousValue).MakeByRefType(), "context");
-            var mutatingBehaviourParam = Expression.Parameter(typeof(MutatingClosureBehaviour), "mutatingBehaviour");
-
-            // Methods
-            var asMethod = typeof(AnonymousValue).GetMethod(nameof(AnonymousValue.As)) 
-                           ?? throw new MissingMethodException($"Method 'As' not found in AnonymousValue.");
-            
-            var setMethod = typeof(AnonymousValue).GetMethod(nameof(AnonymousValue.Set)) 
-                            ?? throw new MissingMethodException($"Method 'Set' not found in AnonymousValue.");
-            
-            var invokeMethod = delegateType.GetMethod("Invoke") 
-                               ?? throw new MissingMethodException($"Method 'Invoke' not found in {delegateType}.");
-
-            // Determine if the context should be passed as AnonymousValue or as a specific type
-            var contextAsAnonymousValue = contextType == typeof(AnonymousValue);
-            Expression contextExpr = contextAsAnonymousValue
-                ? contextParam
-                : Expression.Call(contextParam, asMethod.MakeGenericMethod(contextType));
-            
-            // ref parameters
-            var isRefContext = invokeMethod.GetParameters()[0].ParameterType.IsByRef;
-            
-            // Compile non-ref invoker (Normal)
-            if (!isRefContext) {
-                var invokeExpr = Expression.Call(
-                    Expression.TypeAs(delegateParam, delegateType),
-                    invokeMethod, 
-                    contextExpr
-                );
-                
-                var lambda = 
-                    Expression.Lambda<AnonymousActionInvoker>(
-                        invokeExpr, delegateParam, contextParam, mutatingBehaviourParam
-                    );
-                
-                invoker = lambda.Compile();
-            }
-            // Compile ref invoker (Mutating)
-            else {
-                // Variables
-                var castContextVar = Expression.Variable(contextType, "castContext");
-                
-                // Expressions
-                var assignCastContext = Expression.Assign(
-                    castContextVar, contextExpr
-                );
-                
-                var castDelegateExpr = Expression.TypeAs(
-                    delegateParam, delegateType
-                );
-
-                var invokeExpr = Expression.Call(
-                    castDelegateExpr, invokeMethod, castContextVar
-                );
-                
-                var ifMutatingSetContext = Expression.IfThen(
-                    Expression.Equal(
-                        mutatingBehaviourParam,
-                        Expression.Constant(MutatingClosureBehaviour.Retain)
-                    ),
-                    contextAsAnonymousValue
-                        ? Expression.Assign(contextParam, castContextVar)
-                        : Expression.Call(contextParam, setMethod.MakeGenericMethod(contextType), castContextVar)
-                );
-                
-                var block = Expression.Block(
-                    new[] { castContextVar},
-                    assignCastContext,
-                    invokeExpr,
-                    ifMutatingSetContext
-                );
-
-                var lambda = 
-                    Expression.Lambda<AnonymousActionInvoker>(
-                        block, delegateParam, contextParam, mutatingBehaviourParam
-                    );
-                
-                invoker = lambda.Compile();
-            }
-            
-            s_actionInvokers[delegateType] = invoker;
-        }
-
-        return invoker;
+        return s_actionInvokers.GetOrAdd(@delegate.GetType(), CreateActionInvoker);
     }
-    
+
+    static AnonymousActionInvoker CreateActionInvoker(Type delegateType) {
+        // delegate type, context and argument types
+        var genericArguments = AnonymousHelper.GetGenericArguments(delegateType);
+            
+        var contextType = genericArguments[0] ??
+                          throw new InvalidOperationException(
+                              $"Delegate type '{delegateType.Name}' does not have a context type.");
+
+        // Parameters (AnonymousClosure, ref AnonymousValue)
+        var delegateParam = Expression.Parameter(typeof(Delegate), "delegate");
+        var contextParam = Expression.Parameter(typeof(AnonymousValue).MakeByRefType(), "context");
+        var mutatingBehaviourParam = Expression.Parameter(typeof(MutatingBehaviour), "mutatingBehaviour");
+
+        // Methods
+        var asMethod = typeof(AnonymousValue).GetMethod(nameof(AnonymousValue.As)) 
+                       ?? throw new MissingMethodException($"Method 'As' not found in AnonymousValue.");
+            
+        var setMethod = typeof(AnonymousValue).GetMethod(nameof(AnonymousValue.SetValue)) 
+                        ?? throw new MissingMethodException($"Method 'Set' not found in AnonymousValue.");
+            
+        var invokeMethod = delegateType.GetMethod("Invoke") 
+                           ?? throw new MissingMethodException($"Method 'Invoke' not found in {delegateType}.");
+
+        // Determine if the context should be passed as AnonymousValue or as a specific type
+        var contextAsAnonymousValue = contextType == typeof(AnonymousValue);
+        Expression contextExpr = contextAsAnonymousValue
+            ? contextParam
+            : Expression.Call(contextParam, asMethod.MakeGenericMethod(contextType));
+            
+        // ref parameters
+        var isRefContext = invokeMethod.GetParameters()[0].ParameterType.IsByRef;
+            
+        // Compile non-ref invoker (Normal)
+        if (!isRefContext) {
+            var invokeExpr = Expression.Call(
+                Expression.TypeAs(delegateParam, delegateType),
+                invokeMethod, 
+                contextExpr
+            );
+                
+            var lambda = 
+                Expression.Lambda<AnonymousActionInvoker>(
+                    invokeExpr, delegateParam, contextParam, mutatingBehaviourParam
+                );
+                
+            return lambda.Compile();
+        }
+        // Compile ref invoker (Mutating)
+        else {
+            // Variables
+            var castContextVar = Expression.Variable(contextType, "castContext");
+                
+            // Expressions
+            var assignCastContext = Expression.Assign(
+                castContextVar, contextExpr
+            );
+                
+            var castDelegateExpr = Expression.TypeAs(
+                delegateParam, delegateType
+            );
+
+            var invokeExpr = Expression.Call(
+                castDelegateExpr, invokeMethod, castContextVar
+            );
+                
+            var ifMutatingSetContext = Expression.IfThen(
+                Expression.Equal(
+                    mutatingBehaviourParam,
+                    Expression.Constant(MutatingBehaviour.Mutate)
+                ),
+                contextAsAnonymousValue
+                    ? Expression.Assign(contextParam, castContextVar)
+                    : Expression.Call(contextParam, setMethod.MakeGenericMethod(contextType), castContextVar)
+            );
+                
+            var block = Expression.Block(
+                new[] { castContextVar},
+                assignCastContext,
+                invokeExpr,
+                ifMutatingSetContext
+            );
+
+            var lambda = 
+                Expression.Lambda<AnonymousActionInvoker>(
+                    block, delegateParam, contextParam, mutatingBehaviourParam
+                );
+                
+            return lambda.Compile();
+        }
+    }
+
     /// <summary>
     /// Gets an invoker delegate for an anonymous action closure with an argument of type <typeparamref name="TArg"/>.
     /// The invoker will handle both normal and mutating (ref context) actions.
@@ -159,116 +171,116 @@ public static class AnonymousInvokers {
     /// Thrown if the delegate type does not match the expected signature for an anonymous action invoker with an argument.
     /// </exception>
     public static AnonymousActionInvoker<TArg> GetActionInvoker<TArg>(Delegate @delegate) {
-        var delegateType = @delegate.GetType();
+        if (!AnonymousHelper.IsAction(@delegate))
+            throw new ArgumentException($"Delegate '{@delegate.GetType()}' is not a valid action.");
         
-        if (!s_argActionInvokers.TryGetValue(delegateType, out var invoker)) {
-            // delegate context and argument types
-            var genericArguments = delegateType.GetGenericArguments();
-            var contextType = genericArguments[0] ??
-                              throw new InvalidOperationException(
-                                  $"Delegate type '{delegateType.Name}' does not have a context type.");
-            var argType = genericArguments[1] ??
+        return (AnonymousActionInvoker<TArg>)s_argActionInvokers.GetOrAdd(@delegate.GetType(), CreateActionInvoker<TArg>);
+    }
+
+    static AnonymousActionInvoker<TArg> CreateActionInvoker<TArg>(Type delegateType) {
+        // delegate context and argument types
+        var genericArguments = AnonymousHelper.GetGenericArguments(delegateType);
+        
+        var contextType = genericArguments[0] ??
                           throw new InvalidOperationException(
-                              $"Delegate type '{delegateType.Name}' does not have an argument type.");
-            
-            // Validate types
-            if (argType != typeof(TArg)) {
-                throw new InvalidCastException(
-                    $"Delegate type '{delegateType.Name}' argument type '{argType.Name}' does not match expected type '{typeof(TArg).Name}'.");
-            }
-
-            // Parameters (AnonymousClosure, ref AnonymousValue)
-            var delegateParam = Expression.Parameter(typeof(Delegate), "delegate");
-            var contextParam = Expression.Parameter(typeof(AnonymousValue).MakeByRefType(), "context");
-            var mutatingBehaviourParam = Expression.Parameter(typeof(MutatingClosureBehaviour), "mutatingBehaviour");
-            var argParam = Expression.Parameter(typeof(TArg).MakeByRefType(), "arg");
-            
-            // Methods
-            var asMethod = typeof(AnonymousValue).GetMethod(nameof(AnonymousValue.As)) 
-                           ?? throw new MissingMethodException($"Method 'As' not found in AnonymousValue.");
-            
-            var setMethod = typeof(AnonymousValue).GetMethod(nameof(AnonymousValue.Set)) 
-                            ?? throw new MissingMethodException($"Method 'Set' not found in AnonymousValue.");
-            
-            var invokeMethod = delegateType.GetMethod("Invoke") 
-                               ?? throw new MissingMethodException($"Method 'Invoke' not found in {delegateType}.");
-
-            // Determine if the context should be passed as AnonymousValue or as a specific type
-            var contextAsAnonymousValue = contextType == typeof(AnonymousValue);
-            Expression contextExpr = contextAsAnonymousValue
-                ? contextParam
-                : Expression.Call(contextParam, asMethod.MakeGenericMethod(contextType));
-            
-            // ref parameters
-            var invokeMethodParameters = invokeMethod.GetParameters();
-            var isRefContext = invokeMethodParameters[0].ParameterType.IsByRef;
-
-            // Compile non-ref invoker (Normal)
-            if (!isRefContext) {
-                var invokeExpr = Expression.Call(
-                    Expression.TypeAs(delegateParam, delegateType),
-                    invokeMethod, 
-                    contextExpr,
-                    argParam
-                );
-                
-                var lambda = 
-                    Expression.Lambda<AnonymousActionInvoker<TArg>>(
-                        invokeExpr, delegateParam, contextParam, mutatingBehaviourParam, argParam
-                    );
-                
-                invoker = lambda.Compile();
-            }
-            // Compile ref invoker (Mutating)
-            else {
-                // Variables
-                var castContextVar = Expression.Variable(contextType, "castContext");
-                
-                // Expressions
-                var assignCastContext = Expression.Assign(
-                    castContextVar, contextExpr
-                );
-                
-                var castDelegateExpr = Expression.TypeAs(
-                    delegateParam, delegateType
-                );
-
-                var invokeExpr = Expression.Call(
-                    castDelegateExpr, invokeMethod, castContextVar, argParam
-                );
-                
-                var ifMutatingSetContext = Expression.IfThen(
-                    Expression.Equal(
-                        mutatingBehaviourParam,
-                        Expression.Constant(MutatingClosureBehaviour.Retain)
-                    ),
-                    contextAsAnonymousValue
-                        ? Expression.Assign(contextParam, castContextVar)
-                        : Expression.Call(contextParam, setMethod.MakeGenericMethod(contextType), castContextVar)
-                );
-                
-                var block = Expression.Block(
-                    new[] { castContextVar},
-                    assignCastContext,
-                    invokeExpr,
-                    ifMutatingSetContext
-                );
-
-                var lambda = 
-                    Expression.Lambda<AnonymousActionInvoker<TArg>>(
-                        block, delegateParam, contextParam, mutatingBehaviourParam, argParam
-                    );
-                
-                invoker = lambda.Compile();
-            }
-            
-            s_argActionInvokers[delegateType] = invoker;
+                              $"Delegate type '{delegateType.Name}' does not have a context type.");
+        var argType = genericArguments[1] ??
+                      throw new InvalidOperationException(
+                          $"Delegate type '{delegateType.Name}' does not have an argument type.");
+        
+        // Validate types
+        if (argType != typeof(TArg)) {
+            throw new InvalidCastException(
+                $"Delegate type '{delegateType.Name}' argument type '{argType.Name}' does not match expected type '{typeof(TArg).Name}'.");
         }
 
-        return (AnonymousActionInvoker<TArg>)invoker;
+        // Parameters (AnonymousClosure, ref AnonymousValue)
+        var delegateParam = Expression.Parameter(typeof(Delegate), "delegate");
+        var contextParam = Expression.Parameter(typeof(AnonymousValue).MakeByRefType(), "context");
+        var mutatingBehaviourParam = Expression.Parameter(typeof(MutatingBehaviour), "mutatingBehaviour");
+        var argParam = Expression.Parameter(typeof(TArg).MakeByRefType(), "arg");
+        
+        // Methods
+        var asMethod = typeof(AnonymousValue).GetMethod(nameof(AnonymousValue.As)) 
+                       ?? throw new MissingMethodException($"Method 'As' not found in AnonymousValue.");
+        
+        var setMethod = typeof(AnonymousValue).GetMethod(nameof(AnonymousValue.SetValue)) 
+                        ?? throw new MissingMethodException($"Method 'Set' not found in AnonymousValue.");
+        
+        var invokeMethod = delegateType.GetMethod("Invoke") 
+                           ?? throw new MissingMethodException($"Method 'Invoke' not found in {delegateType}.");
+
+        // Determine if the context should be passed as AnonymousValue or as a specific type
+        var contextAsAnonymousValue = contextType == typeof(AnonymousValue);
+        Expression contextExpr = contextAsAnonymousValue
+            ? contextParam
+            : Expression.Call(contextParam, asMethod.MakeGenericMethod(contextType));
+        
+        // ref parameters
+        var invokeMethodParameters = invokeMethod.GetParameters();
+        var isRefContext = invokeMethodParameters[0].ParameterType.IsByRef;
+
+        // Compile non-ref invoker (Normal)
+        if (!isRefContext) {
+            var invokeExpr = Expression.Call(
+                Expression.TypeAs(delegateParam, delegateType),
+                invokeMethod, 
+                contextExpr,
+                argParam
+            );
+            
+            var lambda = 
+                Expression.Lambda<AnonymousActionInvoker<TArg>>(
+                    invokeExpr, delegateParam, contextParam, mutatingBehaviourParam, argParam
+                );
+            
+            return lambda.Compile();
+        }
+        // Compile ref invoker (Mutating)
+        else {
+            // Variables
+            var castContextVar = Expression.Variable(contextType, "castContext");
+
+            // Expressions
+            var assignCastContext = Expression.Assign(
+                castContextVar, contextExpr
+            );
+
+            var castDelegateExpr = Expression.TypeAs(
+                delegateParam, delegateType
+            );
+
+            var invokeExpr = Expression.Call(
+                castDelegateExpr, invokeMethod, castContextVar, argParam
+            );
+
+            var ifMutatingSetContext = Expression.IfThen(
+                Expression.Equal(
+                    mutatingBehaviourParam,
+                    Expression.Constant(MutatingBehaviour.Mutate)
+                ),
+                contextAsAnonymousValue
+                    ? Expression.Assign(contextParam, castContextVar)
+                    : Expression.Call(contextParam, setMethod.MakeGenericMethod(contextType), castContextVar)
+            );
+
+            var block = Expression.Block(
+                new[] { castContextVar },
+                assignCastContext,
+                invokeExpr,
+                ifMutatingSetContext
+            );
+
+            var lambda =
+                Expression.Lambda<AnonymousActionInvoker<TArg>>(
+                    block, delegateParam, contextParam, mutatingBehaviourParam, argParam
+                );
+
+            return lambda.Compile();
+        }
     }
-    
-    /// <summary>
+
+/// <summary>
     /// Gets an invoker delegate for an anonymous function closure with the specified return type.
     /// The invoker will handle both normal and mutating (ref context) functions.
     /// </summary>
@@ -285,110 +297,116 @@ public static class AnonymousInvokers {
     /// Thrown if the delegate type does not match the expected signature for an anonymous function invoker.
     /// </exception>>
     public static AnonymousFuncInvoker<TReturn> GetFuncInvoker<TReturn>(Delegate @delegate) {
-        var delegateType = @delegate.GetType();
+        if (!AnonymousHelper.IsFunc(@delegate))
+            throw new ArgumentException($"Delegate '{@delegate.GetType()}' is not a valid function.");
+    
+        return (AnonymousFuncInvoker<TReturn>)s_funcInvokers.GetOrAdd(@delegate.GetType(), CreateFuncInvoker<TReturn>);
+    }
+
+    static AnonymousFuncInvoker<TReturn> CreateFuncInvoker<TReturn>(Type delegateType) {
+        // delegate context and return types
+        var genericArguments = AnonymousHelper.GetGenericArguments(delegateType);
         
-        if (!s_funcInvokers.TryGetValue(delegateType, out var invoker)) {
-            // delegate context and return types
-            var genericArguments = delegateType.GetGenericArguments();
-            var contextType = genericArguments[0] ??
-                              throw new InvalidOperationException(
-                                  $"Delegate type '{delegateType.Name}' does not have a context type.");
-            var returnType = genericArguments[1] ??
-                             throw new InvalidOperationException(
-                                 $"Delegate type '{delegateType.Name}' does not have a return type.");
-            
-            // Validate types
-            if (returnType != typeof(TReturn)) {
-                throw new InvalidCastException(
-                    $"Delegate type '{delegateType.Name}' return type '{returnType.Name}' does not match expected type '{typeof(TReturn).Name}'.");
-            }
-
-            // Parameters (AnonymousClosure, ref AnonymousValue)
-            var delegateParam = Expression.Parameter(typeof(Delegate), "delegate");
-            var contextParam = Expression.Parameter(typeof(AnonymousValue).MakeByRefType(), "context");
-            var mutatingBehaviourParam = Expression.Parameter(typeof(MutatingClosureBehaviour), "mutatingBehaviour");
-
-            // Methods
-            var asMethod = typeof(AnonymousValue).GetMethod(nameof(AnonymousValue.As)) 
-                           ?? throw new MissingMethodException($"Method 'As' not found in AnonymousValue.");
-            
-            var setMethod = typeof(AnonymousValue).GetMethod(nameof(AnonymousValue.Set))
-                            ?? throw new MissingMethodException($"Method 'Set' not found in AnonymousValue.");
-            
-            var invokeMethod = delegateType.GetMethod("Invoke") 
-                               ?? throw new MissingMethodException($"Method 'Invoke' not found in {delegateType}.");
-
-            // Determine if the context should be passed as AnonymousValue or as a specific type
-            var contextAsAnonymousValue = contextType == typeof(AnonymousValue);
-            Expression contextExpr = contextAsAnonymousValue
-                ? contextParam
-                : Expression.Call(contextParam, asMethod.MakeGenericMethod(contextType));
-            
-            // ref parameters
-            var invokeMethodParameters = invokeMethod.GetParameters();
-            var isRefContext = invokeMethodParameters[0].ParameterType.IsByRef;
-            
-            // Compile non ref invoker
-            if (!isRefContext) {
-                var invokeExpr = Expression.Call(
-                    Expression.TypeAs(delegateParam, delegateType),
-                    invokeMethod, 
-                    contextExpr
-                );
-            
-                var lambda = 
-                    Expression.Lambda<AnonymousFuncInvoker<TReturn>>(
-                        invokeExpr, delegateParam, contextParam, mutatingBehaviourParam
-                    );
-            
-                invoker = lambda.Compile();
-            }
-            else {
-                // Variables
-                var castContextVar = Expression.Variable(contextType, "castContext");
-                
-                // Expressions
-                var assignCastContext = Expression.Assign(
-                    castContextVar, contextExpr
-                );
-                
-                var castDelegateExpr = Expression.TypeAs(
-                    delegateParam, delegateType
-                );
-
-                var invokeExpr = Expression.Call(
-                    castDelegateExpr, invokeMethod, castContextVar
-                );
-                
-                var ifMutatingSetContext = Expression.IfThen(
-                    Expression.Equal(
-                        mutatingBehaviourParam,
-                        Expression.Constant(MutatingClosureBehaviour.Retain)
-                    ),
-                    contextAsAnonymousValue
-                        ? Expression.Assign(contextParam, castContextVar)
-                        : Expression.Call(contextParam, setMethod.MakeGenericMethod(contextType), castContextVar)
-                );
-                
-                var block = Expression.Block(
-                    new[] { castContextVar},
-                    assignCastContext,
-                    invokeExpr,
-                    ifMutatingSetContext
-                );
-
-                var lambda = 
-                    Expression.Lambda<AnonymousActionInvoker>(
-                        block, delegateParam, contextParam, mutatingBehaviourParam
-                    );
-                
-                invoker = lambda.Compile();
-            }
-            
-            s_funcInvokers[delegateType] = invoker;
+        var contextType = genericArguments[0] ??
+                          throw new InvalidOperationException(
+                              $"Delegate type '{delegateType.Name}' does not have a context type.");
+        var returnType = genericArguments[1] ??
+                         throw new InvalidOperationException(
+                             $"Delegate type '{delegateType.Name}' does not have a return type.");
+        
+        // Validate types
+        if (returnType != typeof(TReturn)) {
+            throw new InvalidCastException(
+                $"Delegate type '{delegateType.Name}' return type '{returnType.Name}' does not match expected type '{typeof(TReturn).Name}'.");
         }
 
-        return (AnonymousFuncInvoker<TReturn>)invoker;
+        // Parameters (AnonymousClosure, ref AnonymousValue)
+        var delegateParam = Expression.Parameter(typeof(Delegate), "delegate");
+        var contextParam = Expression.Parameter(typeof(AnonymousValue).MakeByRefType(), "context");
+        var mutatingBehaviourParam = Expression.Parameter(typeof(MutatingBehaviour), "mutatingBehaviour");
+
+        // Methods
+        var asMethod = typeof(AnonymousValue).GetMethod(nameof(AnonymousValue.As)) 
+                       ?? throw new MissingMethodException($"Method 'As' not found in AnonymousValue.");
+        
+        var setMethod = typeof(AnonymousValue).GetMethod(nameof(AnonymousValue.SetValue))
+                        ?? throw new MissingMethodException($"Method 'Set' not found in AnonymousValue.");
+        
+        var invokeMethod = delegateType.GetMethod("Invoke") 
+                           ?? throw new MissingMethodException($"Method 'Invoke' not found in {delegateType}.");
+
+        // Determine if the context should be passed as AnonymousValue or as a specific type
+        var contextAsAnonymousValue = contextType == typeof(AnonymousValue);
+        Expression contextExpr = contextAsAnonymousValue
+            ? contextParam
+            : Expression.Call(contextParam, asMethod.MakeGenericMethod(contextType));
+        
+        // ref parameters
+        var invokeMethodParameters = invokeMethod.GetParameters();
+        var isRefContext = invokeMethodParameters[0].ParameterType.IsByRef;
+        
+        // Compile non ref invoker
+        if (!isRefContext) {
+            var invokeExpr = Expression.Call(
+                Expression.TypeAs(delegateParam, delegateType),
+                invokeMethod, 
+                contextExpr
+            );
+        
+            var lambda = 
+                Expression.Lambda<AnonymousFuncInvoker<TReturn>>(
+                    invokeExpr, delegateParam, contextParam, mutatingBehaviourParam
+                );
+        
+            return lambda.Compile();
+        }
+        else {
+            // Variables
+            var castContextVar = Expression.Variable(contextType, "castContext");
+            var returnVar = Expression.Variable(returnType, "returnValue");
+
+            // Expressions
+            var assignCastContext = Expression.Assign(
+                castContextVar, contextExpr
+            );
+
+            var castDelegateExpr = Expression.TypeAs(
+                delegateParam, delegateType
+            );
+
+            var invokeExpr = Expression.Call(
+                castDelegateExpr, invokeMethod, castContextVar
+            );
+            
+            var assignReturnInvokeExpr = Expression.Assign(
+                returnVar, invokeExpr
+            );
+
+            var ifMutatingSetContext = Expression.IfThen(
+                Expression.Equal(
+                    mutatingBehaviourParam,
+                    Expression.Constant(MutatingBehaviour.Mutate)
+                ),
+                contextAsAnonymousValue
+                    ? Expression.Assign(contextParam, castContextVar)
+                    : Expression.Call(contextParam, setMethod.MakeGenericMethod(contextType), castContextVar)
+            );
+
+            var block = Expression.Block(
+                new[] { castContextVar, returnVar },
+                assignCastContext,
+                assignReturnInvokeExpr,
+                ifMutatingSetContext,
+                returnVar
+            );
+
+            var lambda =
+                Expression.Lambda<AnonymousFuncInvoker<TReturn>>(
+                    block, delegateParam, contextParam, mutatingBehaviourParam
+                );
+
+            return lambda.Compile();
+        }
     }
     
     /// <summary>
@@ -409,121 +427,126 @@ public static class AnonymousInvokers {
     /// Thrown if the delegate type does not match the expected signature for an anonymous function invoker with an argument.
     /// </exception>
     public static AnonymousFuncInvoker<TArg, TReturn> GetFuncInvoker<TArg, TReturn>(Delegate @delegate) {
-        var delegateType = @delegate.GetType();
+        if (!AnonymousHelper.IsFunc(@delegate))
+            throw new ArgumentException($"Delegate '{@delegate.GetType()}' is not a valid function.");
         
-        if (!s_argFuncInvokers.TryGetValue(delegateType, out var invoker)) {
-            // delegate context and argument types
-            var genericArguments = delegateType.GetGenericArguments();
-            var contextType = genericArguments[0] ??
-                              throw new InvalidOperationException(
-                                  $"Delegate type '{delegateType.Name}' does not have a context type.");
-            var argType = genericArguments[1] ??
+        return (AnonymousFuncInvoker<TArg, TReturn>)s_argFuncInvokers.GetOrAdd(@delegate.GetType(), CreateFuncInvoker<TArg, TReturn>);
+    }
+
+    static AnonymousFuncInvoker<TArg, TReturn> CreateFuncInvoker<TArg, TReturn>(Type delegateType) {
+        // delegate context and argument types
+        var genericArguments = AnonymousHelper.GetGenericArguments(delegateType);
+        var contextType = genericArguments[0] ??
                           throw new InvalidOperationException(
-                              $"Delegate type '{delegateType.Name}' does not have an argument type.");
-            
-            var returnType = genericArguments[2] ??
-                             throw new InvalidOperationException(
-                                 $"Delegate type '{delegateType.Name}' does not have a return type.");
-            
-            // Validate types
-            if (argType != typeof(TArg)) {
-                throw new InvalidCastException(
-                    $"Delegate type '{delegateType.Name}' argument type '{argType.Name}' does not match expected type '{typeof(TArg).Name}'.");
-            }
-            
-            if (returnType != typeof(TReturn)) {
-                throw new InvalidCastException(
-                    $"Delegate type '{delegateType.Name}' return type '{returnType.Name}' does not match expected type '{typeof(TReturn).Name}'.");
-            }
-
-            // Parameters (AnonymousClosure, ref AnonymousValue)
-            var delegateParam = Expression.Parameter(typeof(Delegate), "delegate");
-            var contextParam = Expression.Parameter(typeof(AnonymousValue).MakeByRefType(), "context");
-            var mutatingBehaviourParam = Expression.Parameter(typeof(MutatingClosureBehaviour), "mutatingBehaviour");
-            var argParam = Expression.Parameter(typeof(TArg).MakeByRefType(), "arg");
-            
-            // Methods
-            var asMethod = typeof(AnonymousValue).GetMethod(nameof(AnonymousValue.As)) 
-                           ?? throw new MissingMethodException($"Method 'As' not found in AnonymousValue.");
-            
-            var setMethod = typeof(AnonymousValue).GetMethod(nameof(AnonymousValue.Set)) 
-                            ?? throw new MissingMethodException($"Method 'Set' not found in AnonymousValue.");
-            
-            var invokeMethod = delegateType.GetMethod("Invoke") 
-                               ?? throw new MissingMethodException($"Method 'Invoke' not found in {delegateType}.");
-
-            // Determine if the context should be passed as AnonymousValue or as a specific type
-            var contextAsAnonymousValue = contextType == typeof(AnonymousValue);
-            Expression contextExpr = contextAsAnonymousValue
-                ? contextParam
-                : Expression.Call(contextParam, asMethod.MakeGenericMethod(contextType));
-            
-            // ref parameters
-            var invokeMethodParameters = invokeMethod.GetParameters();
-            var isRefContext = invokeMethodParameters[0].ParameterType.IsByRef;
-
-            // Compile non-ref invoker (Normal)
-            if (!isRefContext) {
-                var invokeExpr = Expression.Call(
-                    Expression.TypeAs(delegateParam, delegateType),
-                    invokeMethod, 
-                    contextExpr,
-                    argParam
-                );
-                
-                var lambda = 
-                    Expression.Lambda<AnonymousFuncInvoker<TArg, TReturn>>(
-                        invokeExpr, delegateParam, contextParam, mutatingBehaviourParam, argParam
-                    );
-                
-                invoker = lambda.Compile();
-            }
-            // Compile ref invoker (Mutating)
-            else {
-                // Variables
-                var castContextVar = Expression.Variable(contextType, "castContext");
-                
-                // Expressions
-                var assignCastContext = Expression.Assign(
-                    castContextVar, contextExpr
-                );
-                
-                var castDelegateExpr = Expression.TypeAs(
-                    delegateParam, delegateType
-                );
-
-                var invokeExpr = Expression.Call(
-                    castDelegateExpr, invokeMethod, castContextVar, argParam
-                );
-                
-                var ifMutatingSetContext = Expression.IfThen(
-                    Expression.Equal(
-                        mutatingBehaviourParam,
-                        Expression.Constant(MutatingClosureBehaviour.Retain)
-                    ),
-                    contextAsAnonymousValue
-                        ? Expression.Assign(contextParam, castContextVar)
-                        : Expression.Call(contextParam, setMethod.MakeGenericMethod(contextType), castContextVar)
-                );
-                
-                var block = Expression.Block(
-                    new[] { castContextVar},
-                    assignCastContext,
-                    invokeExpr,
-                    ifMutatingSetContext
-                );
-
-                var lambda = 
-                    Expression.Lambda<AnonymousFuncInvoker<TArg, TReturn>>(
-                        block, delegateParam, contextParam, mutatingBehaviourParam, argParam
-                    );
-                
-                invoker = lambda.Compile();
-            }
-            
-            s_argFuncInvokers[delegateType] = invoker;
+                              $"Delegate type '{delegateType.Name}' does not have a context type.");
+        var argType = genericArguments[1] ??
+                      throw new InvalidOperationException(
+                          $"Delegate type '{delegateType.Name}' does not have an argument type.");
+        
+        var returnType = genericArguments[2] ??
+                         throw new InvalidOperationException(
+                             $"Delegate type '{delegateType.Name}' does not have a return type.");
+        
+        // Validate types
+        if (argType != typeof(TArg)) {
+            throw new InvalidCastException(
+                $"Delegate type '{delegateType.Name}' argument type '{argType.Name}' does not match expected type '{typeof(TArg).Name}'.");
+        }
+        
+        if (returnType != typeof(TReturn)) {
+            throw new InvalidCastException(
+                $"Delegate type '{delegateType.Name}' return type '{returnType.Name}' does not match expected type '{typeof(TReturn).Name}'.");
         }
 
-        return (AnonymousFuncInvoker<TArg, TReturn>)invoker;
+        // Parameters (AnonymousClosure, ref AnonymousValue)
+        var delegateParam = Expression.Parameter(typeof(Delegate), "delegate");
+        var contextParam = Expression.Parameter(typeof(AnonymousValue).MakeByRefType(), "context");
+        var mutatingBehaviourParam = Expression.Parameter(typeof(MutatingBehaviour), "mutatingBehaviour");
+        var argParam = Expression.Parameter(typeof(TArg).MakeByRefType(), "arg");
+        
+        // Methods
+        var asMethod = typeof(AnonymousValue).GetMethod(nameof(AnonymousValue.As)) 
+                       ?? throw new MissingMethodException($"Method 'As' not found in AnonymousValue.");
+        
+        var setMethod = typeof(AnonymousValue).GetMethod(nameof(AnonymousValue.SetValue)) 
+                        ?? throw new MissingMethodException($"Method 'Set' not found in AnonymousValue.");
+        
+        var invokeMethod = delegateType.GetMethod("Invoke") 
+                           ?? throw new MissingMethodException($"Method 'Invoke' not found in {delegateType}.");
+
+        // Determine if the context should be passed as AnonymousValue or as a specific type
+        var contextAsAnonymousValue = contextType == typeof(AnonymousValue);
+        Expression contextExpr = contextAsAnonymousValue
+            ? contextParam
+            : Expression.Call(contextParam, asMethod.MakeGenericMethod(contextType));
+        
+        // ref parameters
+        var invokeMethodParameters = invokeMethod.GetParameters();
+        var isRefContext = invokeMethodParameters[0].ParameterType.IsByRef;
+
+        // Compile non-ref invoker (Normal)
+        if (!isRefContext) {
+            var invokeExpr = Expression.Call(
+                Expression.TypeAs(delegateParam, delegateType),
+                invokeMethod, 
+                contextExpr,
+                argParam
+            );
+            
+            var lambda = 
+                Expression.Lambda<AnonymousFuncInvoker<TArg, TReturn>>(
+                    invokeExpr, delegateParam, contextParam, mutatingBehaviourParam, argParam
+                );
+            
+            return lambda.Compile();
+        }
+        // Compile ref invoker (Mutating)
+        else {
+            // Variables
+            var castContextVar = Expression.Variable(contextType, "castContext");
+            var returnVar = Expression.Variable(returnType, "returnValue");
+            
+            // Expressions
+            var assignCastContext = Expression.Assign(
+                castContextVar, contextExpr
+            );
+            
+            var castDelegateExpr = Expression.TypeAs(
+                delegateParam, delegateType
+            );
+
+            var invokeExpr = Expression.Call(
+                castDelegateExpr, invokeMethod, castContextVar, argParam
+            );
+            
+            var assignReturnInvokeExpr = Expression.Assign(
+                returnVar, invokeExpr
+            );
+            
+            var ifMutatingSetContext = Expression.IfThen(
+                Expression.Equal(
+                    mutatingBehaviourParam,
+                    Expression.Constant(MutatingBehaviour.Mutate)
+                ),
+                contextAsAnonymousValue
+                    ? Expression.Assign(contextParam, castContextVar)
+                    : Expression.Call(contextParam, setMethod.MakeGenericMethod(contextType), castContextVar)
+            );
+            
+            var block = Expression.Block(
+                new[] { castContextVar, returnVar},
+                assignCastContext,
+                assignReturnInvokeExpr,
+                ifMutatingSetContext,
+                returnVar
+            );
+            
+            var lambda = 
+                Expression.Lambda<AnonymousFuncInvoker<TArg, TReturn>>(
+                    block, delegateParam, contextParam, mutatingBehaviourParam, argParam
+                );
+            
+            return lambda.Compile();
+        }
     }
 }

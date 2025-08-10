@@ -24,7 +24,6 @@ internal enum ValueType {
 }
 
 internal static class ValueTypeExtensions {
-    
     public static bool IsOrReference<T>(this ValueType valueType) {
         return valueType switch {
             ValueType.Char => typeof(T) == typeof(char),
@@ -50,14 +49,14 @@ internal static class ValueTypeExtensions {
 }
 
 [StructLayout(LayoutKind.Explicit)]
-public struct AnonymousValue {
+public struct AnonymousValue : IEquatable<AnonymousValue> {
     [FieldOffset(0)] ValueType ValueType;
 
     [FieldOffset(8)] object? unknownValue;
 
     [FieldOffset(16)] char charValue;
     [FieldOffset(16)] bool boolValue;
-                 
+
     [FieldOffset(16)] byte byteValue;
     [FieldOffset(16)] sbyte sbyteValue;
     [FieldOffset(16)] short shortValue;
@@ -66,12 +65,12 @@ public struct AnonymousValue {
     [FieldOffset(16)] uint uintValue;
     [FieldOffset(16)] long longValue;
     [FieldOffset(16)] ulong ulongValue;
-                 
+
     [FieldOffset(16)] float floatValue;
     [FieldOffset(16)] double doubleValue;
     [FieldOffset(16)] decimal decimalValue;
 
-    public static AnonymousValue From<T>(T value) {
+    public static AnonymousValue From<T>(T value) where T : notnull {
         return typeof(T) switch {
             { } t when t == typeof(char) => Char(Unsafe.As<T, char>(ref value)),
             { } t when t == typeof(bool) => Bool(Unsafe.As<T, bool>(ref value)),
@@ -93,10 +92,10 @@ public struct AnonymousValue {
         };
     }
 
-    
+
     public bool Is<T>() => typeof(T) == GetUnderlyingType();
-    
-    public T? As<T>() {
+
+    public T As<T>() {
         if (ValueType.IsOrReference<T>()) {
             return ValueType switch {
                 ValueType.Char => Unsafe.As<char, T>(ref charValue),
@@ -109,28 +108,28 @@ public struct AnonymousValue {
                 ValueType.Int => Unsafe.As<int, T>(ref intValue),
                 ValueType.UInt => Unsafe.As<uint, T>(ref uintValue),
                 ValueType.Long => Unsafe.As<long, T>(ref longValue),
-                
+
                 ValueType.ULong => Unsafe.As<ulong, T>(ref ulongValue),
-                
+
                 ValueType.Float => Unsafe.As<float, T>(ref floatValue),
                 ValueType.Double => Unsafe.As<double, T>(ref doubleValue),
                 ValueType.Decimal => Unsafe.As<decimal, T>(ref decimalValue),
-                
+
                 ValueType.Reference => unknownValue switch {
                     T t => t,
-                    null => default,
+                    null => throw new ArgumentNullException(nameof(unknownValue)),
                     _ => InvalidCast()
                 },
                 _ => InvalidCast()
             };
         }
-        
+
         return InvalidCast();
 
         T InvalidCast() => throw new InvalidCastException($"Cannot cast AnonymousValue to {typeof(T).Name}.");
     }
-    
-    public void Set<T>(T value) {
+
+    public void SetValue<T>(T value) {
         switch (value) {
             case char c:
                 charValue = c;
@@ -195,7 +194,7 @@ public struct AnonymousValue {
                 return;
         }
     }
-    
+
     public Type? GetUnderlyingType() {
         return ValueType switch {
             ValueType.Char => typeof(char),
@@ -235,4 +234,61 @@ public struct AnonymousValue {
     static AnonymousValue Float(float value) => new() { floatValue = value, ValueType = ValueType.Float };
     static AnonymousValue Double(double value) => new() { doubleValue = value, ValueType = ValueType.Double };
     static AnonymousValue Decimal(decimal value) => new() { decimalValue = value, ValueType = ValueType.Decimal };
+
+    public bool Equals(AnonymousValue other) {
+        if (ValueType != other.ValueType)
+            return false;
+
+        return ValueType switch {
+            ValueType.Char => charValue == other.charValue,
+            ValueType.Bool => boolValue == other.boolValue,
+
+            ValueType.Byte => byteValue == other.byteValue,
+            ValueType.SByte => sbyteValue == other.sbyteValue,
+            ValueType.Short => shortValue == other.shortValue,
+            ValueType.UShort => ushortValue == other.ushortValue,
+            ValueType.Int => intValue == other.intValue,
+            ValueType.UInt => uintValue == other.uintValue,
+            ValueType.Long => longValue == other.longValue,
+            ValueType.ULong => ulongValue == other.ulongValue,
+
+            ValueType.Float => floatValue.Equals(other.floatValue),
+            ValueType.Double => doubleValue.Equals(other.doubleValue),
+            ValueType.Decimal => decimalValue.Equals(other.decimalValue),
+
+            _ => Equals(unknownValue, other.unknownValue)
+        };
+    }
+
+    public override bool Equals(object? obj) {
+        return obj is AnonymousValue value && Equals(value);
+    }
+
+    public override int GetHashCode() {
+        return ValueType switch {
+            ValueType.Char => HashCode.Combine(ValueType, charValue),
+            ValueType.Bool => HashCode.Combine(ValueType, boolValue),
+            ValueType.Byte => HashCode.Combine(ValueType, byteValue),
+            ValueType.SByte => HashCode.Combine(ValueType, sbyteValue),
+            ValueType.Short => HashCode.Combine(ValueType, shortValue),
+            ValueType.UShort => HashCode.Combine(ValueType, ushortValue),
+            ValueType.Int => HashCode.Combine(ValueType, intValue),
+            ValueType.UInt => HashCode.Combine(ValueType, uintValue),
+            ValueType.Long => HashCode.Combine(ValueType, longValue),
+            ValueType.ULong => HashCode.Combine(ValueType, ulongValue),
+            ValueType.Float => HashCode.Combine(ValueType, floatValue),
+            ValueType.Double => HashCode.Combine(ValueType, doubleValue),
+            ValueType.Decimal => HashCode.Combine(ValueType, decimalValue),
+            ValueType.Reference => HashCode.Combine(ValueType, unknownValue?.GetHashCode() ?? 0),
+            _ => throw new ArgumentOutOfRangeException()
+        };
+    }
+
+    public static bool operator ==(AnonymousValue left, AnonymousValue right) {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(AnonymousValue left, AnonymousValue right) {
+        return !(left == right);
+    }
 }

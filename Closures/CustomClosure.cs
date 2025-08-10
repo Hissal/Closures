@@ -13,7 +13,7 @@ namespace Closures {
         public static CustomClosure<TContext, TDelegate> Custom<TContext, TDelegate>(TContext context,
             TDelegate @delegate)
             where TDelegate : Delegate
-            => Create<TContext, TDelegate, CustomClosure<TContext, TDelegate>>(context, @delegate);
+            => ClosureFactory.Create<TContext, TDelegate, CustomClosure<TContext, TDelegate>>(context, @delegate);
     }
 
     public interface ICustomClosure {
@@ -25,19 +25,8 @@ namespace Closures {
     /// <br></br> <br></br>
     /// <b>Note</b> The <see cref="Delegate"/> must be manually invoked using it directly and passing the context as the first argument.
     /// </summary>
-    public struct CustomClosure<TContext, TDelegate> : IClosure<TContext, TDelegate>, ICustomClosure
-        where TDelegate : Delegate {
-        public TDelegate Delegate { get; set; }
-        public bool DelegateIsNull => Delegate is null;
-
-        public TContext Context { get; set; }
-
-        public CustomClosure(TContext context, TDelegate @delegate) {
-            Context = context;
-            Delegate = @delegate;
-        }
-
-        public void Add(TDelegate @delegate) => Delegate = (TDelegate)System.Delegate.Combine(Delegate, @delegate);
-        public void Remove(TDelegate @delegate) => Delegate = (TDelegate)System.Delegate.Remove(Delegate, @delegate)!;
+    public readonly struct CustomClosure<TContext, TDelegate> : IClosure<TContext, TDelegate>, ICustomClosure where TDelegate : Delegate {
+        public TDelegate Delegate { get; init; }
+        public TContext Context { get; init; }
     }
 }

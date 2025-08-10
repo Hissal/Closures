@@ -12,7 +12,7 @@ public class RefClosureActionWithArgEdgeCases {
     public void RefClosureActionWithArg_NullContext_Invoke_DoesNotThrow() {
         int? context = null;
         Assert.DoesNotThrow(() => {
-            var closure = Closure.Action(ref context, (ref int? ctx, int arg) => Assert.That(ctx, Is.Null, "Context should be null"));
+            var closure = RefClosure.Action(ref context, (ref int? ctx, int arg) => Assert.That(ctx, Is.Null, "Context should be null"));
             closure.Invoke(42);
         }, "Closure with null context should not throw an exception");
     }
@@ -20,58 +20,18 @@ public class RefClosureActionWithArgEdgeCases {
     [Test]
     public void RefClosureActionWithArg_NullDelegate_Invoke_DoesNotThrow() {
         int context = 5;
-        Assert.DoesNotThrow(() => {
-            var closure = Closure.Action(ref context, (ActionWithRefContext<int, int>)null);
+        Assert.Throws<NullReferenceException>(() => {
+            var closure = RefClosure.Action(ref context, (ActionWithRefContext<int, int>)null);
             closure.Invoke(42);
         }, "Closure with null delegate should not throw an exception");
     }
-
-    [Test]
-    public void RefClosureActionWithArg_NullDelegate_Add_DoesNotThrow() {
-        int context = 5;
-        Assert.DoesNotThrow(() => {
-            var closure = Closure.Action(ref context, (ActionWithRefContext<int, int>)null);
-            closure.Add((ref int ctx, int arg) => Assert.That(ctx, Is.EqualTo(context)));
-            closure.Invoke(42);
-        }, "Adding a null delegate to a closure should not throw an exception");
-    }
-
-    [Test]
-    public void RefClosureActionWithArg_Add_NullDelegate_DoesNotThrow() {
-        int context = 5;
-        Assert.DoesNotThrow(() => {
-            var closure = Closure.Action(ref context, (ref int ctx, int arg) => Assert.That(ctx, Is.EqualTo(context)));
-            closure.Add(null);
-            closure.Invoke(42);
-        }, "Adding a null delegate to a closure should not throw an exception");
-    }
-
-    [Test]
-    public void RefClosureActionWithArg_NullDelegate_Remove_DoesNotThrow() {
-        int context = 5;
-        void Handler(ref int ctx, int arg) { /* no-op */ }
-        Assert.DoesNotThrow(() => {
-            var closure = Closure.Action(ref context, (ActionWithRefContext<int, int>)null);
-            closure.Remove(Handler);
-            closure.Invoke(42);
-        }, "Removing a null delegate from a closure should not throw an exception");
-    }
-
-    [Test]
-    public void RefClosureActionWithArg_Remove_NullDelegate_DoesNotThrow() {
-        int context = 5;
-        Assert.DoesNotThrow(() => {
-            var closure = Closure.Action(ref context, (ref int ctx, int arg) => Assert.That(ctx, Is.EqualTo(context)));
-            closure.Remove(null);
-            closure.Invoke(42);
-        }, "Removing a null delegate from a closure should not throw an exception");
-    }
+    
 
     [Test]
     public void RefClosureActionWithArg_ExceptionDuringInvocation_Throws() {
         int context = 5;
         Assert.Throws<InvalidOperationException>(() => {
-            var closure = Closure.Action(ref context, (ref int ctx, int arg) => throw new InvalidOperationException("Test exception"));
+            var closure = RefClosure.Action(ref context, (ref int ctx, int arg) => throw new InvalidOperationException("Test exception"));
             closure.Invoke(42);
         }, "Closure should throw an exception during invocation");
     }
@@ -79,7 +39,7 @@ public class RefClosureActionWithArgEdgeCases {
     [Test]
     public void RefClosureActionWithArg_ExceptionDuringInvocation_TryCatch_CatchesThrownException() {
         int context = 5;
-        var closure = Closure.Action(ref context, (ref int ctx, int arg) => throw new InvalidOperationException("Test exception"));
+        var closure = RefClosure.Action(ref context, (ref int ctx, int arg) => throw new InvalidOperationException("Test exception"));
         try {
             closure.Invoke(42);
             Assert.Fail("Closure should throw an exception during invocation");
@@ -94,7 +54,7 @@ public class RefClosureActionWithArgEdgeCases {
     public void RefClosureActionWithArg_NullArg_Invoke_DoesNotThrow() {
         int context = 5;
         Assert.DoesNotThrow(() => {
-            var closure = Closure.Action(ref context, (ref int ctx, int? arg) => Assert.That(arg, Is.Null, "Argument should be null"));
+            var closure = RefClosure.Action(ref context, (ref int ctx, int? arg) => Assert.That(arg, Is.Null, "Argument should be null"));
             closure.Invoke(null);
         }, "Closure with null argument should not throw an exception");
     }
@@ -106,7 +66,7 @@ public class RefClosureActionWithArgEdgeCases {
         int? context = null;
         int expected = 42;
         
-        var closure = Closure.Action(ref context, (ref int? ctx, int arg) => {
+        var closure = RefClosure.Action(ref context, (ref int? ctx, int arg) => {
             Assert.That(ctx, Is.Null, "Context should be null");
             ctx = expected; // Set a value to ensure the closure can modify it
         });

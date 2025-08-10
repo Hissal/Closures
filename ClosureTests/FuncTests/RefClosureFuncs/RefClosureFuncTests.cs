@@ -13,7 +13,7 @@ public class RefClosureFuncTests {
     public void RefClosureFunc_ReceivesContext() {
         int context = 5;
         int expected = 5;
-        var closure = Closure.Func(ref context, (ref int ctx) => { Assert.That(ctx, Is.EqualTo(expected)); return ctx; });
+        var closure = RefClosure.Func(ref context, (ref int ctx) => { Assert.That(ctx, Is.EqualTo(expected)); return ctx; });
         closure.Invoke();
     }
 
@@ -22,49 +22,9 @@ public class RefClosureFuncTests {
         var testContext = new TestClass();
         int expected = 5;
         var tupleContext = (testContext, expected);
-        var closure = Closure.Func(ref tupleContext, (ref (TestClass testContext, int expected) ctx) => ctx.testContext.Value = ctx.expected);
+        var closure = RefClosure.Func(ref tupleContext, (ref (TestClass testContext, int expected) ctx) => ctx.testContext.Value = ctx.expected);
         closure.Invoke();
         Assert.That(testContext.Value, Is.EqualTo(expected));
-    }
-
-    [Test]
-    public void RefClosureFunc_AddAndRemove_Works() {
-        int context = 1;
-        int callSum = 0;
-        int Handler(ref int ctx) => callSum += ctx;
-        var closure = Closure.Func(ref context, Handler);
-        closure.Add(Handler);
-        closure.Invoke();
-        closure.Remove(Handler);
-        closure.Invoke();
-        Assert.That(callSum, Is.EqualTo(3 * context));
-    }
-
-    [Test]
-    public void RefClosureFunc_Add_MultipleTimes_Works() {
-        int context = 2;
-        int actionCount = 5;
-        int callSum = 0;
-        int Handler(ref int ctx) => callSum += ctx;
-        var closure = Closure.Func(ref context, Handler);
-        for (int i = 0; i < actionCount - 1; i++) closure.Add(Handler);
-        closure.Invoke();
-        Assert.That(callSum, Is.EqualTo(actionCount * context));
-    }
-
-    [Test]
-    public void RefClosureFunc_Remove_MultipleTimes_Works() {
-        int context = 3;
-        int actionCount = 5;
-        int amountToCall = 2;
-        int expectedPerCall = context;
-        int callSum = 0;
-        int Handler(ref int ctx) => callSum += ctx;
-        var closure = Closure.Func(ref context, Handler);
-        for (int i = 0; i < actionCount - 1; i++) closure.Add(Handler);
-        for (int i = 0; i < actionCount - amountToCall; i++) closure.Remove(Handler);
-        closure.Invoke();
-        Assert.That(callSum, Is.EqualTo(amountToCall * expectedPerCall));
     }
 
     // Ref closure tests
@@ -73,19 +33,7 @@ public class RefClosureFuncTests {
         int context = 5;
         int addition = 3;
         int expected = context + addition;
-        var closure = Closure.Func(ref context, (ref int ctx) => ctx += addition);
-        closure.Invoke();
-        Assert.That(context, Is.EqualTo(expected));
-    }
-
-    [Test]
-    public void RefClosureFunc_ModifiesOriginalContext_MultipleDelegates() {
-        int context = 5;
-        int addition = 3;
-        int expected = context + addition * 3;
-        var closure = Closure.Func(ref context, (ref int ctx) => ctx += addition);
-        closure.Add((ref int ctx) => ctx += addition);
-        closure.Add((ref int ctx) => ctx += addition);
+        var closure = RefClosure.Func(ref context, (ref int ctx) => ctx += addition);
         closure.Invoke();
         Assert.That(context, Is.EqualTo(expected));
     }
@@ -95,7 +43,7 @@ public class RefClosureFuncTests {
         int context = 5;
         int addition = 3;
         int expected = context + addition * 2;
-        var closure = Closure.Func(ref context, (ref int ctx) => ctx += addition);
+        var closure = RefClosure.Func(ref context, (ref int ctx) => ctx += addition);
         closure.Invoke();
         closure.Invoke();
         Assert.That(context, Is.EqualTo(expected));
@@ -105,7 +53,7 @@ public class RefClosureFuncTests {
     public void RefClosureFunc_ModifyingOriginalContext_ModifiesContextAndRefContext() {
         int context = 5;
         int expected = 7;
-        var closure = Closure.Func(ref context, (ref int ctx) => ctx += 2);
+        var closure = RefClosure.Func(ref context, (ref int ctx) => ctx += 2);
         context = expected;
         Assert.That(closure.Context, Is.EqualTo(expected));
         Assert.That(closure.RefContext, Is.EqualTo(expected));
@@ -116,7 +64,7 @@ public class RefClosureFuncTests {
     public void RefClosureFunc_ReturnsExpectedValue() {
         int context = 10;
         int expected = context * 2;
-        var closure = Closure.Func(ref context, (ref int ctx) => ctx * 2);
+        var closure = RefClosure.Func(ref context, (ref int ctx) => ctx * 2);
         int result = closure.Invoke();
         Assert.That(result, Is.EqualTo(expected));
     }

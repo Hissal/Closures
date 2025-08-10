@@ -15,9 +15,6 @@
 **Each one of these must be tested on all types of closures**
 - ReceivesContext
 - ReceivesTupleContext_AndModifiesTestContextValue
-- AddAndRemove_Works
-- Add_MultipleTimes_Works
-- Remove_MultipleTimes_Works
 
 ## Argument closure tests
 **Each one of these must be tested on all types of closures that take in a normal argument**
@@ -27,13 +24,11 @@
 **Each one of these must be tested on all types of closures that take in a ref argument**
 - ReceivesRefArg
 - ModifiesRefArgValue
-- ModifiesRefArgValue_MultipleDelegates
 - ModifiesRefArgValue_MultipleInvocations
 
 ## Mutating closure tests
 **Each one of these must be tested on all types mutating closures that modify the stored context**
-- Retain_RetainsModifiedContext
-- Reset_ResetsModifiedContext
+- RetainsModifiedContext
 
 ## Ref closure tests
 **Each one of these must be tested on all types of ref closures where the context is passed as ref**
@@ -54,14 +49,9 @@
 ## Default edge case tests
 **Each one of these must be tested on all types of "Normal" closures**
 - NullContext_Invoke_DoesNotThrow
-- NullDelegate_Invoke_DoesNotThrow (For ref arg closures call this with non ref arg)
-- NullDelegate_Add_DoesNotThrow
-- Add_NullDelegate_DoesNotThrow
-- NullDelegate_Remove_DoesNotThrow
-- Remove_NullDelegate_DoesNotThrow
+- NullDelegate_Invoke_Throws (For ref arg closures call this with non ref arg)
 - ExceptionDuringInvocation_Throws
 - ExceptionDuringInvocation_TryCatch_CatchesThrownException
-- ConcurrentAddRemoveInvoke_IsThreadSafe (Exclude on ref closures)
 
 ## Argument closure edge cases
 **Each one of these must be tested on all types of closures that take in a normal argument**
@@ -69,13 +59,12 @@
 
 ## Ref argument closure edge cases
 **Each one of these must be tested on all types of closures that take in a ref argument**
-- NullDelegate_Invoke_RefArg_DoesNotThrow
+- NullDelegate_Invoke_RefArg_Throws
 - NullRefArgument_Invoke_DoesNotThrow
 - NullRefArg_SettingValue_ModifiesOriginalRef
 
 ## Mutating closure edge cases
 **Each one of these must be tested on all types mutating closures that modify the stored context**
-- Reset_NullDelegate_DoesNotThrow
 - ConcurrentInvoke_SharesContextAcrossThreads
 
 ## Ref closure edge cases

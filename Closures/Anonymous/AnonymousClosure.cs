@@ -1,29 +1,54 @@
 ﻿namespace Closures;
 
-public interface IAnonymousClosure : IClosure<AnonymousValue, Delegate>, IMutatingClosure {
+/// <summary>
+/// Whether the closure should mutate the context or reset it after invocation.
+/// </summary>
+public enum MutatingBehaviour : byte {
+    Mutate,
+    Reset
+}
+
+/// <summary>
+/// Policy for handling exceptions during delegate invocation.
+/// </summary>
+public enum ExceptionHandlingPolicy : byte {
+    HandleExpected,
+    HandleAll,
+    HandleNone
+}
+
+public interface IAnonymousClosure : IClosure<AnonymousValue, Delegate> {
+    MutatingBehaviour MutatingBehaviour { get; init; }
     bool Is<TClosureType>() where TClosureType : IClosure;
 }
 
-public partial struct AnonymousClosure {
-    public static TClosure Create<TClosure>(AnonymousValue context, Delegate @delegate, MutatingClosureBehaviour mutatingBehaviour = MutatingClosureBehaviour.Retain)
+public partial record struct AnonymousClosure {
+    public static TClosure Create<TClosure>(AnonymousValue context, Delegate @delegate, MutatingBehaviour mutatingBehaviour = MutatingBehaviour.Reset)
         where TClosure : struct, IAnonymousClosure {
-        return new TClosure() {
+        return new TClosure {
             Context = context,
             Delegate = @delegate,
-            MutatingBehaviour = mutatingBehaviour
+            MutatingBehaviour = mutatingBehaviour,
         };
     }
 
-    public static AnonymousClosure Create(AnonymousValue context, Delegate @delegate, MutatingClosureBehaviour mutatingBehaviour = MutatingClosureBehaviour.Retain) => 
+    public static AnonymousClosure Create(AnonymousValue context, Delegate @delegate, MutatingBehaviour mutatingBehaviour = MutatingBehaviour.Reset) => 
+        Create<AnonymousClosure>(context, @delegate, mutatingBehaviour);
+    
+    public static AnonymousClosure Create<TDelegate>(AnonymousValue context, TDelegate @delegate, MutatingBehaviour mutatingBehaviour = MutatingBehaviour.Reset)
+        where TDelegate : Delegate => 
         Create<AnonymousClosure>(context, @delegate, mutatingBehaviour);
 
-    public static AnonymousClosureAction Action(AnonymousValue context, Delegate @delegate, MutatingClosureBehaviour mutatingBehaviour = MutatingClosureBehaviour.Retain) {
+    public static AnonymousClosureAction Action(AnonymousValue context, Delegate @delegate, MutatingBehaviour mutatingBehaviour = MutatingBehaviour.Reset) {
         if (!AnonymousHelper.IsAction(@delegate))
             throw new ArgumentException("Delegate must not have a return value.", nameof(@delegate));
+        
+        if (AnonymousHelper.HasArg(@delegate))
+            throw new ArgumentException("Delegate must not have an argument.", nameof(@delegate));
 
         return Create<AnonymousClosureAction>(context, @delegate, mutatingBehaviour);
     }
-    public static AnonymousClosureAction<TArg> Action<TArg>(AnonymousValue context, Delegate @delegate, MutatingClosureBehaviour mutatingBehaviour = MutatingClosureBehaviour.Retain) {
+    public static AnonymousClosureAction<TArg> Action<TArg>(AnonymousValue context, Delegate @delegate, MutatingBehaviour mutatingBehaviour = MutatingBehaviour.Reset) {
         if (!AnonymousHelper.IsAction(@delegate))
             throw new ArgumentException("Delegate must not have a return value.", nameof(@delegate));
         
@@ -33,13 +58,16 @@ public partial struct AnonymousClosure {
         return Create<AnonymousClosureAction<TArg>>(context, @delegate, mutatingBehaviour);
     }
     
-    public static AnonymousClosureFunc<TReturn> Func<TReturn>(AnonymousValue context, Delegate @delegate, MutatingClosureBehaviour mutatingBehaviour = MutatingClosureBehaviour.Retain) {
+    public static AnonymousClosureFunc<TReturn> Func<TReturn>(AnonymousValue context, Delegate @delegate, MutatingBehaviour mutatingBehaviour = MutatingBehaviour.Reset) {
         if (!AnonymousHelper.IsFunc(@delegate))
             throw new ArgumentException("Delegate must have a return value.", nameof(@delegate));
         
+        if (AnonymousHelper.HasArg(@delegate))
+            throw new ArgumentException("Delegate must not have an argument.", nameof(@delegate));
+        
         return Create<AnonymousClosureFunc<TReturn>>(context, @delegate, mutatingBehaviour);
     }
-    public static AnonymousClosureFunc<TArg, TReturn> Func<TArg, TReturn>(AnonymousValue context, Delegate @delegate, MutatingClosureBehaviour mutatingBehaviour = MutatingClosureBehaviour.Retain) {
+    public static AnonymousClosureFunc<TArg, TReturn> Func<TArg, TReturn>(AnonymousValue context, Delegate @delegate, MutatingBehaviour mutatingBehaviour = MutatingBehaviour.Reset) {
         if (!AnonymousHelper.IsFunc(@delegate))
             throw new ArgumentException("Delegate must have a return value.", nameof(@delegate));
         
@@ -48,471 +76,681 @@ public partial struct AnonymousClosure {
         
         return Create<AnonymousClosureFunc<TArg, TReturn>>(context, @delegate, mutatingBehaviour);
     }
+
+    // Targeted creation methods for specific delegate types
+    public static AnonymousClosureAction Action<TContext>(TContext context, Action<TContext> @delegate) where TContext : notnull =>
+        Create<AnonymousClosureAction>(AnonymousValue.From(context), @delegate);
+    public static AnonymousClosureAction Action<TContext>(TContext context, RefAction<TContext> @delegate, MutatingBehaviour mutatingBehaviour = MutatingBehaviour.Mutate) where TContext : notnull =>
+        Create<AnonymousClosureAction>(AnonymousValue.From(context), @delegate, mutatingBehaviour);
+    
+    public static AnonymousClosureAction<TArg> Action<TContext, TArg>(TContext context, Action<TContext, TArg> @delegate) where TContext : notnull => 
+        Create<AnonymousClosureAction<TArg>>(AnonymousValue.From(context), @delegate);
+    public static AnonymousClosureAction<TArg> Action<TContext, TArg>(TContext context, RefActionWithNormalContext<TContext, TArg> @delegate) where TContext : notnull => 
+        Create<AnonymousClosureAction<TArg>>(AnonymousValue.From(context), @delegate);
+    public static AnonymousClosureAction<TArg> Action<TContext, TArg>(TContext context, ActionWithRefContext<TContext, TArg> @delegate, MutatingBehaviour mutatingBehaviour = MutatingBehaviour.Mutate) where TContext : notnull => 
+        Create<AnonymousClosureAction<TArg>>(AnonymousValue.From(context), @delegate, mutatingBehaviour);
+    public static AnonymousClosureAction<TArg> Action<TContext, TArg>(TContext context, RefAction<TContext, TArg> @delegate, MutatingBehaviour mutatingBehaviour = MutatingBehaviour.Mutate) where TContext : notnull => 
+        Create<AnonymousClosureAction<TArg>>(AnonymousValue.From(context), @delegate, mutatingBehaviour);
+    
+    
+    public static AnonymousClosureFunc<TReturn> Func<TContext, TReturn>(TContext context, Func<TContext, TReturn> @delegate) where TContext : notnull => 
+        Create<AnonymousClosureFunc<TReturn>>(AnonymousValue.From(context), @delegate);
+    public static AnonymousClosureFunc<TReturn> Func<TContext, TReturn>(TContext context, RefFunc<TContext, TReturn> @delegate, MutatingBehaviour mutatingBehaviour = MutatingBehaviour.Mutate) where TContext : notnull => 
+        Create<AnonymousClosureFunc<TReturn>>(AnonymousValue.From(context), @delegate, mutatingBehaviour);
+    
+    public static AnonymousClosureFunc<TArg, TReturn> Func<TContext, TArg, TReturn>(TContext context, Func<TContext, TArg, TReturn> @delegate) where TContext : notnull => 
+        Create<AnonymousClosureFunc<TArg, TReturn>>(AnonymousValue.From(context), @delegate);
+    public static AnonymousClosureFunc<TArg, TReturn> Func<TContext, TArg, TReturn>(TContext context, RefFuncWithNormalContext<TContext, TArg, TReturn> @delegate) where TContext : notnull => 
+        Create<AnonymousClosureFunc<TArg, TReturn>>(AnonymousValue.From(context), @delegate);
+    public static AnonymousClosureFunc<TArg, TReturn> Func<TContext, TArg, TReturn>(TContext context, FuncWithRefContext<TContext, TArg, TReturn> @delegate, MutatingBehaviour mutatingBehaviour = MutatingBehaviour.Mutate) where TContext : notnull => 
+        Create<AnonymousClosureFunc<TArg, TReturn>>(AnonymousValue.From(context), @delegate, mutatingBehaviour);
+    public static AnonymousClosureFunc<TArg, TReturn> Func<TContext, TArg, TReturn>(TContext context, RefFunc<TContext, TArg, TReturn> @delegate, MutatingBehaviour mutatingBehaviour = MutatingBehaviour.Mutate) where TContext : notnull => 
+        Create<AnonymousClosureFunc<TArg, TReturn>>(AnonymousValue.From(context), @delegate, mutatingBehaviour);
 }
 
-public partial struct AnonymousClosure : IAnonymousClosure {
-    // TODO: in the future use source generators to generate all used delegate types and their invokers
-    // This would allow us to avoid the overhead of reflection and expression trees.
-    // Also generate all AnonymousValue type to contain all needed values only.
-    // For now use Expression trees to generate invokers for types when first used.
-    
-    // static readonly Dictionary<Type, Action<AnonymousClosure>> delegateTypeInvokers =
-    //     new Dictionary<Type, Action<AnonymousClosure>>() {
-    //         { typeof(Action<int>), closure => (closure.Delegate as Action<int>)?.Invoke(closure.Context) },
-    //         { typeof(Action<long>), closure => (closure.Delegate as Action<long>)?.Invoke(closure.Context) },
-    //         { typeof(Action<float>), closure => (closure.Delegate as Action<float>)?.Invoke(closure.Context) },
-    //         { typeof(Action<double>), closure => (closure.Delegate as Action<double>)?.Invoke(closure.Context) },
-    //         { typeof(Action<AnonymousValue>), closure => (closure.Delegate as Action<AnonymousValue>)?.Invoke(closure.Context) },
-    //         
-    //         { typeof(Func<int, bool>), closure => (closure.Delegate as Func<int, bool>)?.Invoke(closure.Context.As<int>()) },
-    //         { typeof(Func<long, bool>), closure => (closure.Delegate as Func<long, bool>)?.Invoke(closure.Context.As<long>()) },
-    //         { typeof(Func<float, bool>), closure => (closure.Delegate as Func<float, bool>)?.Invoke(closure.Context.As<float>()) },
-    //         { typeof(Func<double, bool>), closure => (closure.Delegate as Func<double, bool>)?.Invoke(closure.Context.As<double>()) },
-    //         { typeof(Func<AnonymousValue, bool>), closure => (closure.Delegate as Func<AnonymousValue, bool>)?.Invoke(closure.Context) }
-    //     };
-
-    AnonymousValue anonymousContext;
-
+// TODO: Use source generators to generate all used delegate types and their invokers
+public partial record struct AnonymousClosure : IAnonymousClosure {
+    public Delegate Delegate { get; init; }
     public AnonymousValue Context {
         get => anonymousContext; 
-        set => anonymousContext = value;
+        init => anonymousContext = value;
     }
-    public Delegate Delegate { get; set; }
-    public bool DelegateIsNull => Delegate is null;
+    AnonymousValue anonymousContext;
+
+    public MutatingBehaviour MutatingBehaviour { get; init; }
     
-    public MutatingClosureBehaviour MutatingBehaviour { get; set; }
+    Delegate? cachedInvoker;
+
     public bool Is<TClosureType>() where TClosureType : IClosure => 
-        AnonymousHelper.CanConvert<TClosureType, AnonymousClosure>(this);
+        AnonymousHelper.CanConvert<AnonymousClosure, TClosureType>(this);
     
-    public void Add(Delegate @delegate) => Delegate = Delegate.Combine(Delegate, @delegate);
-    
-    public void Remove(Delegate @delegate) => Delegate = Delegate.Remove(Delegate, @delegate);
-     
     public void Invoke() {
-        if (Delegate is null)
-            return;
-        
-        AnonymousInvokers.GetActionInvoker(Delegate)
-            .Invoke(Delegate, ref anonymousContext, MutatingBehaviour);
+        if (cachedInvoker is not AnonymousInvokers.AnonymousActionInvoker invoker) {
+            invoker = AnonymousInvokers.GetActionInvoker(Delegate);
+            cachedInvoker = invoker;
+        }
+        invoker.Invoke(Delegate, ref anonymousContext, MutatingBehaviour);
     }
     public void Invoke<TArg>(TArg arg) {
-        if (Delegate is null)
-            return;
-        
-        AnonymousInvokers.GetActionInvoker<TArg>(Delegate)
-            .Invoke(Delegate, ref anonymousContext, MutatingBehaviour, ref arg);
+        if (cachedInvoker is not AnonymousInvokers.AnonymousActionInvoker<TArg> invoker) {
+            invoker = AnonymousInvokers.GetActionInvoker<TArg>(Delegate);
+            cachedInvoker = invoker;
+        }
+        invoker.Invoke(Delegate, ref anonymousContext, MutatingBehaviour, ref arg);
     }
     public void Invoke<TArg>(ref TArg arg) {
-        if (Delegate is null)
-            return;
-        
-        AnonymousInvokers.GetActionInvoker<TArg>(Delegate)
-            .Invoke(Delegate, ref anonymousContext, MutatingBehaviour, ref arg);
+        if (cachedInvoker is not AnonymousInvokers.AnonymousActionInvoker<TArg> invoker) {
+            invoker = AnonymousInvokers.GetActionInvoker<TArg>(Delegate);
+            cachedInvoker = invoker;
+        }
+        invoker.Invoke(Delegate, ref anonymousContext, MutatingBehaviour, ref arg);
     }
     
-    public TReturn? Invoke<TReturn>() {
-        if (Delegate is null)
-            return default;
-        
-        return AnonymousInvokers.GetFuncInvoker<TReturn>(Delegate)
-            .Invoke(Delegate, ref anonymousContext, MutatingBehaviour);
+    public TReturn Invoke<TReturn>() {
+        if (cachedInvoker is not AnonymousInvokers.AnonymousFuncInvoker<TReturn> invoker) {
+            invoker = AnonymousInvokers.GetFuncInvoker<TReturn>(Delegate);
+            cachedInvoker = invoker;
+        }
+        return invoker.Invoke(Delegate, ref anonymousContext, MutatingBehaviour);
     }
     
-    public TReturn? Invoke<TArg, TReturn>(TArg arg) {
-        if (Delegate is null)
-            return default;
-        
-        return AnonymousInvokers.GetFuncInvoker<TArg, TReturn>(Delegate)
-            .Invoke(Delegate, ref anonymousContext, MutatingBehaviour, ref arg);
+    public TReturn Invoke<TArg, TReturn>(TArg arg) {
+        if (cachedInvoker is not AnonymousInvokers.AnonymousFuncInvoker<TArg, TReturn> invoker) {
+            invoker = AnonymousInvokers.GetFuncInvoker<TArg, TReturn>(Delegate);
+            cachedInvoker = invoker;
+        }
+        return invoker.Invoke(Delegate, ref anonymousContext, MutatingBehaviour, ref arg);
     }
     
-    public TReturn? Invoke<TArg, TReturn>(ref TArg arg) {
-        if (Delegate is null)
-            return default;
-
-        return AnonymousInvokers.GetFuncInvoker<TArg, TReturn>(Delegate)
-            .Invoke(Delegate, ref anonymousContext, MutatingBehaviour, ref arg);
-
+    public TReturn Invoke<TArg, TReturn>(ref TArg arg) {
+        if (cachedInvoker is not AnonymousInvokers.AnonymousFuncInvoker<TArg, TReturn> invoker) {
+            invoker = AnonymousInvokers.GetFuncInvoker<TArg, TReturn>(Delegate);
+            cachedInvoker = invoker;
+        }
+        return invoker.Invoke(Delegate, ref anonymousContext, MutatingBehaviour, ref arg);
     }
 
-    public Result TryInvoke() {
+    public Result TryInvoke(ExceptionHandlingPolicy exceptionHandlingPolicy = ExceptionHandlingPolicy.HandleExpected) {
         try {
             Invoke();
             return Result.Success();
         }
         catch (Exception e) {
             // Ignore exceptions that are expected from delegate invocation
-            if (AnonymousHelper.ShouldThrow(e))
+            if (AnonymousHelper.ShouldThrow(e, exceptionHandlingPolicy))
                 throw;
 
             return Result.Failure(e);
         }
     }
-    
-    public Result TryInvoke<TArg>(TArg arg) {
+    public Result TryInvoke<TArg>(TArg arg, ExceptionHandlingPolicy exceptionHandlingPolicy = ExceptionHandlingPolicy.HandleExpected) {
         try {
             Invoke(arg);
             return Result.Success();
         }
         catch (Exception e) {
             // Ignore exceptions that are expected from delegate invocation
-            if (AnonymousHelper.ShouldThrow(e))
+            if (AnonymousHelper.ShouldThrow(e, exceptionHandlingPolicy))
                 throw;
 
             return Result.Failure(e);
         }
     }
-    
-    public Result TryInvoke<TArg>(ref TArg arg) {
+    public Result TryInvoke<TArg>(ref TArg arg, ExceptionHandlingPolicy exceptionHandlingPolicy = ExceptionHandlingPolicy.HandleExpected) {
         try {
             Invoke(ref arg);
             return Result.Success();
         }
         catch (Exception e) {
             // Ignore exceptions that are expected from delegate invocation
-            if (AnonymousHelper.ShouldThrow(e))
+            if (AnonymousHelper.ShouldThrow(e, exceptionHandlingPolicy))
                 throw;
 
             return Result.Failure(e);
         }
     }
     
-    public Result<TReturn> TryInvoke<TReturn>() {
-        if (Delegate is null)
-            return Result<TReturn>.Failure(new InvalidOperationException("Delegate is null."));
-        
+    public Result<TReturn> TryInvoke<TReturn>(ExceptionHandlingPolicy exceptionHandlingPolicy = ExceptionHandlingPolicy.HandleExpected) {
         try {
             var result = Invoke<TReturn>();
             return Result<TReturn>.Success(result!);
         }
         catch (Exception e) {
             // Ignore exceptions that are expected from delegate invocation
-            if (AnonymousHelper.ShouldThrow(e))
+            if (AnonymousHelper.ShouldThrow(e, exceptionHandlingPolicy))
                 throw;
 
             return Result<TReturn>.Failure(e);
         }
     }
-    
-    public Result<TReturn> TryInvoke<TArg, TReturn>(TArg arg) {
-        if (Delegate is null)
-            return Result<TReturn>.Failure(new InvalidOperationException("Delegate is null."));
-        
+    public Result<TReturn> TryInvoke<TArg, TReturn>(TArg arg, ExceptionHandlingPolicy exceptionHandlingPolicy = ExceptionHandlingPolicy.HandleExpected) {
         try {
             var result = Invoke<TArg, TReturn>(arg);
             return Result<TReturn>.Success(result!);
         }
         catch (Exception e) {
             // Ignore exceptions that are expected from delegate invocation
-            if (AnonymousHelper.ShouldThrow(e))
+            if (AnonymousHelper.ShouldThrow(e, exceptionHandlingPolicy))
                 throw;
 
             return Result<TReturn>.Failure(e);
         }
     }
-    
-    public Result<TReturn> TryInvoke<TArg, TReturn>(ref TArg arg) {
-        if (Delegate is null)
-            return Result<TReturn>.Failure(new InvalidOperationException("Delegate is null."));
-        
+    public Result<TReturn> TryInvoke<TArg, TReturn>(ref TArg arg, ExceptionHandlingPolicy exceptionHandlingPolicy = ExceptionHandlingPolicy.HandleExpected) {
         try {
             var result = Invoke<TArg, TReturn>(ref arg);
             return Result<TReturn>.Success(result!);
         }
         catch (Exception e) {
             // Ignore exceptions that are expected from delegate invocation
-            if (AnonymousHelper.ShouldThrow(e))
+            if (AnonymousHelper.ShouldThrow(e, exceptionHandlingPolicy))
                 throw;
 
             return Result<TReturn>.Failure(e);
         }
     }
-}
 
-public struct AnonymousClosureAction : IAnonymousClosure, IClosureAction<AnonymousValue, Delegate> {
-    AnonymousValue anonymousContext;
-    public AnonymousValue Context { get; set; }
-    public Delegate Delegate { get; set; }
-    public bool DelegateIsNull => Delegate is null;
-    public MutatingClosureBehaviour MutatingBehaviour { get; set; }
-    
-    public bool Is<TClosureType>() where TClosureType : IClosure => 
-        AnonymousHelper.CanConvert<TClosureType, AnonymousClosureAction>(this);
-
-    public void Add(Delegate @delegate) => Delegate = Delegate.Combine(Delegate, @delegate);
-    public void Remove(Delegate @delegate) => Delegate = Delegate.Remove(Delegate, @delegate)!;
-    
-    public void Invoke() {
-        if (Delegate is null)
-            return;
-        
-        AnonymousInvokers.GetActionInvoker(Delegate)
-            .Invoke(Delegate, ref anonymousContext, MutatingBehaviour);
+    public bool Equals(AnonymousClosure other) {
+        return anonymousContext.Equals(other.anonymousContext) && Delegate.Equals(other.Delegate) && MutatingBehaviour == other.MutatingBehaviour;
     }
 
-    public Result TryInvoke() {
+    public override int GetHashCode() {
+        return HashCode.Combine(anonymousContext, Delegate, (int)MutatingBehaviour);
+    }
+}
+
+public record struct AnonymousClosureAction : IClosureAction<AnonymousValue, Delegate>, IAnonymousClosure {
+    public Delegate Delegate { get; init; }
+    public AnonymousValue Context {
+        get => anonymousContext; 
+        init => anonymousContext = value;
+    }
+    AnonymousValue anonymousContext;
+
+    public MutatingBehaviour MutatingBehaviour { get; init; }
+    
+    Delegate? cachedInvoker;
+
+    public bool Is<TClosureType>() where TClosureType : IClosure => 
+        AnonymousHelper.CanConvert<AnonymousClosureAction, TClosureType>(this);
+    
+    public void Invoke() {
+        if (cachedInvoker is not AnonymousInvokers.AnonymousActionInvoker invoker) {
+            invoker = AnonymousInvokers.GetActionInvoker(Delegate);
+            cachedInvoker = invoker;
+        }
+        invoker.Invoke(Delegate, ref anonymousContext, MutatingBehaviour);
+    }
+
+    public Result TryInvoke(ExceptionHandlingPolicy exceptionHandlingPolicy = ExceptionHandlingPolicy.HandleExpected) {
         try {
             Invoke();
             return Result.Success();
         }
         catch (Exception e) {
             // Ignore exceptions that are expected from delegate invocation
-            if (AnonymousHelper.ShouldThrow(e)) {
+            if (AnonymousHelper.ShouldThrow(e, exceptionHandlingPolicy)) {
                 throw;
             }
 
             return Result.Failure(e);
         }
     }
+    
+    public bool Equals(AnonymousClosureAction other) {
+        return anonymousContext.Equals(other.anonymousContext) && Delegate.Equals(other.Delegate) && MutatingBehaviour == other.MutatingBehaviour;
+    }
+
+    public override int GetHashCode() {
+        return HashCode.Combine(anonymousContext, Delegate, (int)MutatingBehaviour);
+    }
 }
 
-public struct AnonymousClosureAction<TArg> : IAnonymousClosure, IClosureAction<AnonymousValue, TArg, Delegate> {
+public record struct AnonymousClosureAction<TArg> : IClosureRefAction<AnonymousValue, TArg, Delegate>, IAnonymousClosure {
+    public Delegate Delegate { get; init; }
+    public AnonymousValue Context {
+        get => anonymousContext; 
+        init => anonymousContext = value;
+    }
     AnonymousValue anonymousContext;
-    public AnonymousValue Context { get; set; }
-    public Delegate Delegate { get; set; }
-    public bool DelegateIsNull => Delegate is null;
-    public MutatingClosureBehaviour MutatingBehaviour { get; set; }
-    
-    public bool Is<TClosureType>() where TClosureType : IClosure => 
-        AnonymousHelper.CanConvert<TClosureType, AnonymousClosureAction<TArg>>(this);
 
-    public void Add(Delegate @delegate) => Delegate = Delegate.Combine(Delegate, @delegate);
-    public void Remove(Delegate @delegate) => Delegate = Delegate.Remove(Delegate, @delegate)!;
+    public MutatingBehaviour MutatingBehaviour { get; init; }
+    
+    Delegate? cachedInvoker;
+
+    public bool Is<TClosureType>() where TClosureType : IClosure => 
+        AnonymousHelper.CanConvert<AnonymousClosureAction<TArg>, TClosureType>(this);
     
     public void Invoke(TArg arg) {
-        if (Delegate is null)
-            return;
-        
-        AnonymousInvokers.GetActionInvoker<TArg>(Delegate)
-            .Invoke(Delegate, ref anonymousContext, MutatingBehaviour, ref arg);
+        if (cachedInvoker is not AnonymousInvokers.AnonymousActionInvoker<TArg> invoker) {
+            invoker = AnonymousInvokers.GetActionInvoker<TArg>(Delegate);
+            cachedInvoker = invoker;
+        }
+        invoker.Invoke(Delegate, ref anonymousContext, MutatingBehaviour, ref arg);
+    }
+    public void Invoke(ref TArg arg) {
+        if (cachedInvoker is not AnonymousInvokers.AnonymousActionInvoker<TArg> invoker) {
+            invoker = AnonymousInvokers.GetActionInvoker<TArg>(Delegate);
+            cachedInvoker = invoker;
+        }
+        invoker.Invoke(Delegate, ref anonymousContext, MutatingBehaviour, ref arg);
     }
     
-    public Result TryInvoke(TArg arg) {
+    public Result TryInvoke(TArg arg, ExceptionHandlingPolicy exceptionHandlingPolicy = ExceptionHandlingPolicy.HandleExpected) {
         try {
             Invoke(arg);
             return Result.Success();
         }
         catch (Exception e) {
             // Ignore exceptions that are expected from delegate invocation
-            if (AnonymousHelper.ShouldThrow(e)) {
+            if (AnonymousHelper.ShouldThrow(e, exceptionHandlingPolicy)) {
                 throw;
             }
 
             return Result.Failure(e);
         }
     }
-}
+    public Result TryInvoke(ref TArg arg, ExceptionHandlingPolicy exceptionHandlingPolicy = ExceptionHandlingPolicy.HandleExpected) {
+        try {
+            Invoke(ref arg);
+            return Result.Success();
+        }
+        catch (Exception e) {
+            // Ignore exceptions that are expected from delegate invocation
+            if (AnonymousHelper.ShouldThrow(e, exceptionHandlingPolicy)) {
+                throw;
+            }
 
-public struct AnonymousClosureFunc<TReturn> : IAnonymousClosure, IClosureFunc<AnonymousValue, TReturn, Delegate> {
-    AnonymousValue anonymousContext;
-    public AnonymousValue Context { get; set; }
-    public Delegate Delegate { get; set; }
-    public bool DelegateIsNull => Delegate is null;
-    public MutatingClosureBehaviour MutatingBehaviour { get; set; }
+            return Result.Failure(e);
+        }
+    }
     
-    public bool Is<TClosureType>() where TClosureType : IClosure => 
-        AnonymousHelper.CanConvert<TClosureType, AnonymousClosureFunc<TReturn>>(this);
-
-    public static implicit operator bool(AnonymousClosureFunc<TReturn> closure) => closure.DelegateIsNull;
-
-    public void Add(Delegate @delegate) => Delegate = Delegate.Combine(Delegate, @delegate);
-    public void Remove(Delegate @delegate) => Delegate = Delegate.Remove(Delegate, @delegate)!;
-    
-    public TReturn Invoke() {
-        if (Delegate is null)
-            return default!;
-        
-        return AnonymousInvokers.GetFuncInvoker<TReturn>(Delegate)
-            .Invoke(Delegate, ref anonymousContext, MutatingBehaviour);
+    public bool Equals(AnonymousClosureAction<TArg> other) {
+        return anonymousContext.Equals(other.anonymousContext) && Delegate.Equals(other.Delegate) && MutatingBehaviour == other.MutatingBehaviour;
     }
 
-    public Result<TReturn> TryInvoke() {
+    public override int GetHashCode() {
+        return HashCode.Combine(anonymousContext, Delegate, (int)MutatingBehaviour);
+    }
+}
+
+public record struct AnonymousClosureFunc<TReturn> : IClosureFunc<AnonymousValue, TReturn, Delegate>, IAnonymousClosure {
+    public Delegate Delegate { get; init; }
+    public AnonymousValue Context {
+        get => anonymousContext; 
+        init => anonymousContext = value;
+    }
+    AnonymousValue anonymousContext;
+    
+    public MutatingBehaviour MutatingBehaviour { get; init; }
+    
+    Delegate? cachedInvoker;
+
+    public bool Is<TClosureType>() where TClosureType : IClosure => 
+        AnonymousHelper.CanConvert<AnonymousClosureFunc<TReturn>, TClosureType>(this);
+    
+    public TReturn Invoke() {
+        if (cachedInvoker is not AnonymousInvokers.AnonymousFuncInvoker<TReturn> invoker) {
+            invoker = AnonymousInvokers.GetFuncInvoker<TReturn>(Delegate);
+            cachedInvoker = invoker;
+        }
+        return invoker.Invoke(Delegate, ref anonymousContext, MutatingBehaviour);
+    }
+    
+    public bool TryInvoke(out TReturn returnValue, ExceptionHandlingPolicy exceptionHandlingPolicy = ExceptionHandlingPolicy.HandleExpected) {
+        try {
+            returnValue = Invoke();
+            return true;
+        }
+        catch (Exception e) {
+            if (AnonymousHelper.ShouldThrow(e, exceptionHandlingPolicy)) {
+                throw;
+            }
+            
+            returnValue = default!;
+            return false;
+        }
+    }
+
+    public Result<TReturn> TryInvoke(ExceptionHandlingPolicy exceptionHandlingPolicy = ExceptionHandlingPolicy.HandleExpected) {
         try {
             var result = Invoke();
             return Result<TReturn>.Success(result);
         }
         catch (Exception e) {
             // Ignore exceptions that are expected from delegate invocation
-            if (AnonymousHelper.ShouldThrow(e)) {
+            if (AnonymousHelper.ShouldThrow(e, exceptionHandlingPolicy)) {
                 throw;
             }
 
             return Result<TReturn>.Failure(e);
         }
     }
-}
-
-public struct AnonymousClosureFunc<TArg, TReturn> : IAnonymousClosure, IClosureFunc<AnonymousValue, TArg, TReturn, Delegate> {
-    AnonymousValue anonymousContext;
-    public AnonymousValue Context { get; set; }
-    public Delegate Delegate { get; set; }
-    public bool DelegateIsNull => Delegate is null;
-    public MutatingClosureBehaviour MutatingBehaviour { get; set; }
     
-    public bool Is<TClosureType>() where TClosureType : IClosure => 
-        AnonymousHelper.CanConvert<TClosureType, AnonymousClosureFunc<TArg, TReturn>>(this);
-
-    public void Add(Delegate @delegate) => Delegate = Delegate.Combine(Delegate, @delegate);
-    public void Remove(Delegate @delegate) => Delegate = Delegate.Remove(Delegate, @delegate)!;
-    
-    public TReturn Invoke(TArg arg) {
-        if (Delegate is null)
-            return default!;
-        
-        return AnonymousInvokers.GetFuncInvoker<TArg, TReturn>(Delegate)
-            .Invoke(Delegate, ref anonymousContext, MutatingBehaviour, ref arg);
+    public bool Equals(AnonymousClosureFunc<TReturn> other) {
+        return anonymousContext.Equals(other.anonymousContext) && Delegate.Equals(other.Delegate) && MutatingBehaviour == other.MutatingBehaviour;
     }
 
-    public Result<TReturn> TryInvoke(TArg arg) {
+    public override int GetHashCode() {
+        return HashCode.Combine(anonymousContext, Delegate, (int)MutatingBehaviour);
+    }
+}
+
+public record struct AnonymousClosureFunc<TArg, TReturn> : IClosureRefFunc<AnonymousValue, TArg, TReturn, Delegate>, IAnonymousClosure {
+    public Delegate Delegate { get; init; }
+    public AnonymousValue Context {
+        get => anonymousContext; 
+        init => anonymousContext = value;
+    }
+    AnonymousValue anonymousContext;
+    
+    public MutatingBehaviour MutatingBehaviour { get; init; }
+    
+    Delegate? cachedInvoker;
+
+    public bool Is<TClosureType>() where TClosureType : IClosure => 
+        AnonymousHelper.CanConvert<AnonymousClosureFunc<TArg, TReturn>, TClosureType>(this);
+    
+    public TReturn Invoke(TArg arg) {
+        if (cachedInvoker is not AnonymousInvokers.AnonymousFuncInvoker<TArg, TReturn> invoker) {
+            invoker = AnonymousInvokers.GetFuncInvoker<TArg, TReturn>(Delegate);
+            cachedInvoker = invoker;
+        }
+        return invoker.Invoke(Delegate, ref anonymousContext, MutatingBehaviour, ref arg);
+    }
+    public TReturn Invoke(ref TArg arg) {
+        if (cachedInvoker is not AnonymousInvokers.AnonymousFuncInvoker<TArg, TReturn> invoker) {
+            invoker = AnonymousInvokers.GetFuncInvoker<TArg, TReturn>(Delegate);
+            cachedInvoker = invoker;
+        }
+        return invoker.Invoke(Delegate, ref anonymousContext, MutatingBehaviour, ref arg);
+    }
+    
+    public bool TryInvoke(TArg arg, out TReturn returnValue, ExceptionHandlingPolicy exceptionHandlingPolicy = ExceptionHandlingPolicy.HandleExpected) {
         try {
-            var result = Invoke(arg);
+            returnValue = Invoke(arg);
+            return true;
+        }
+        catch (Exception e) {
+            if (AnonymousHelper.ShouldThrow(e, exceptionHandlingPolicy)) {
+                throw;
+            }
+            
+            returnValue = default!;
+            return false;
+        }
+    }
+    public Result<TReturn> TryInvoke(TArg arg, ExceptionHandlingPolicy exceptionHandlingPolicy = ExceptionHandlingPolicy.HandleExpected) {
+        try {
+            var result = Invoke(ref arg);
             return Result<TReturn>.Success(result);
         }
         catch (Exception e) {
             // Ignore exceptions that are expected from delegate invocation
-            if (AnonymousHelper.ShouldThrow(e)) {
+            if (AnonymousHelper.ShouldThrow(e, exceptionHandlingPolicy)) {
                 throw;
             }
 
             return Result<TReturn>.Failure(e);
         }
     }
+    
+    public bool TryInvoke(ref TArg arg, out TReturn returnValue, ExceptionHandlingPolicy exceptionHandlingPolicy = ExceptionHandlingPolicy.HandleExpected) {
+        try {
+            returnValue = Invoke(arg);
+            return true;
+        }
+        catch (Exception e) {
+            if (AnonymousHelper.ShouldThrow(e, exceptionHandlingPolicy)) {
+                throw;
+            }
+            
+            returnValue = default!;
+            return false;
+        }
+    }
+    public Result<TReturn> TryInvoke(ref TArg arg, ExceptionHandlingPolicy exceptionHandlingPolicy = ExceptionHandlingPolicy.HandleExpected) {
+        try {
+            var result = Invoke(ref arg);
+            return Result<TReturn>.Success(result);
+        }
+        catch (Exception e) {
+            // Ignore exceptions that are expected from delegate invocation
+            if (AnonymousHelper.ShouldThrow(e, exceptionHandlingPolicy)) {
+                throw;
+            }
+
+            return Result<TReturn>.Failure(e);
+        }
+    }
+    
+    public bool Equals(AnonymousClosureFunc<TArg, TReturn> other) {
+        return anonymousContext.Equals(other.anonymousContext) && Delegate.Equals(other.Delegate) && MutatingBehaviour == other.MutatingBehaviour;
+    }
+
+    public override int GetHashCode() {
+        return HashCode.Combine(anonymousContext, Delegate, (int)MutatingBehaviour);
+    }
 }
 
-public static class AnonymousClosureExtensions {
+public static class AnonymousClosureConversionExtensions {
     // Conversion to AnonymousClosure
     // Normal Actions
-    public static AnonymousClosure AsAnonymous<TContext>(this ClosureAction<TContext> closure) => 
+    public static AnonymousClosure AsAnonymous<TContext>(this ClosureAction<TContext> closure) where TContext : notnull => 
         AnonymousClosure.Create(AnonymousValue.From(closure.Context), closure.Delegate);
-    public static AnonymousClosure AsAnonymous<TContext, TArg>(this ClosureAction<TContext, TArg> closure) =>
+    public static AnonymousClosure AsAnonymous<TContext, TArg>(this ClosureAction<TContext, TArg> closure) where TContext : notnull =>
         AnonymousClosure.Create(AnonymousValue.From(closure.Context), closure.Delegate);
-    public static AnonymousClosure AsAnonymous<TContext, TArg>(this ClosureRefAction<TContext, TArg> closure) =>
+    public static AnonymousClosure AsAnonymous<TContext, TArg>(this ClosureRefAction<TContext, TArg> closure) where TContext : notnull =>
         AnonymousClosure.Create(AnonymousValue.From(closure.Context), closure.Delegate);
     
     // Mutating Actions
-    public static AnonymousClosure AsAnonymous<TContext>(this MutatingClosureAction<TContext> closure) =>
-        AnonymousClosure.Create(AnonymousValue.From(closure.Context), closure.Delegate, closure.MutatingBehaviour);
-    public static AnonymousClosure AsAnonymous<TContext, TArg>(this MutatingClosureAction<TContext, TArg> closure) =>
-        AnonymousClosure.Create(AnonymousValue.From(closure.Context), closure.Delegate, closure.MutatingBehaviour);
-    public static AnonymousClosure AsAnonymous<TContext, TArg>(this MutatingClosureRefAction<TContext, TArg> closure) =>
-        AnonymousClosure.Create(AnonymousValue.From(closure.Context), closure.Delegate, closure.MutatingBehaviour);
+    public static AnonymousClosure AsAnonymous<TContext>(this MutatingClosureAction<TContext> closure) where TContext : notnull =>
+        AnonymousClosure.Create(AnonymousValue.From(closure.Context), closure.Delegate, MutatingBehaviour.Mutate);
+    public static AnonymousClosure AsAnonymous<TContext, TArg>(this MutatingClosureAction<TContext, TArg> closure) where TContext : notnull =>
+        AnonymousClosure.Create(AnonymousValue.From(closure.Context), closure.Delegate, MutatingBehaviour.Mutate);
+    public static AnonymousClosure AsAnonymous<TContext, TArg>(this MutatingClosureRefAction<TContext, TArg> closure) where TContext : notnull =>
+        AnonymousClosure.Create(AnonymousValue.From(closure.Context), closure.Delegate, MutatingBehaviour.Mutate);
     
     // Normal Functions
-    public static AnonymousClosure AsAnonymous<TContext, TReturn>(this ClosureFunc<TContext, TReturn> closure) =>
+    public static AnonymousClosure AsAnonymous<TContext, TReturn>(this ClosureFunc<TContext, TReturn> closure) where TContext : notnull =>
         AnonymousClosure.Create(AnonymousValue.From(closure.Context), closure.Delegate);
-    public static AnonymousClosure AsAnonymous<TContext, TArg, TReturn>(this ClosureFunc<TContext, TArg, TReturn> closure) =>
+    public static AnonymousClosure AsAnonymous<TContext, TArg, TReturn>(this ClosureFunc<TContext, TArg, TReturn> closure) where TContext : notnull =>
         AnonymousClosure.Create(AnonymousValue.From(closure.Context), closure.Delegate);
-    public static AnonymousClosure AsAnonymous<TContext, TArg, TReturn>(this ClosureRefFunc<TContext, TArg, TReturn> closure) =>
+    public static AnonymousClosure AsAnonymous<TContext, TArg, TReturn>(this ClosureRefFunc<TContext, TArg, TReturn> closure) where TContext : notnull =>
         AnonymousClosure.Create(AnonymousValue.From(closure.Context), closure.Delegate);
     
     // Mutating Functions
-    public static AnonymousClosure AsAnonymous<TContext, TReturn>(this MutatingClosureFunc<TContext, TReturn> closure) =>
-        AnonymousClosure.Create(AnonymousValue.From(closure.Context), closure.Delegate, closure.MutatingBehaviour);
-    public static AnonymousClosure AsAnonymous<TContext, TArg, TReturn>(this MutatingClosureFunc<TContext, TArg, TReturn> closure) =>
-        AnonymousClosure.Create(AnonymousValue.From(closure.Context), closure.Delegate, closure.MutatingBehaviour);
-    public static AnonymousClosure AsAnonymous<TContext, TArg, TReturn>(this MutatingClosureRefFunc<TContext, TArg, TReturn> closure) =>
-        AnonymousClosure.Create(AnonymousValue.From(closure.Context), closure.Delegate, closure.MutatingBehaviour);
+    public static AnonymousClosure AsAnonymous<TContext, TReturn>(this MutatingClosureFunc<TContext, TReturn> closure) where TContext : notnull =>
+        AnonymousClosure.Create(AnonymousValue.From(closure.Context), closure.Delegate, MutatingBehaviour.Mutate);
+    public static AnonymousClosure AsAnonymous<TContext, TArg, TReturn>(this MutatingClosureFunc<TContext, TArg, TReturn> closure) where TContext : notnull =>
+        AnonymousClosure.Create(AnonymousValue.From(closure.Context), closure.Delegate, MutatingBehaviour.Mutate);
+    public static AnonymousClosure AsAnonymous<TContext, TArg, TReturn>(this MutatingClosureRefFunc<TContext, TArg, TReturn> closure) where TContext : notnull =>
+        AnonymousClosure.Create(AnonymousValue.From(closure.Context), closure.Delegate, MutatingBehaviour.Mutate);
     
     // Conversion to Closure Actions and Functions
     // Normal Actions
-    public static ClosureAction<TContext> AsClosureAction<TContext>(this AnonymousClosure closure) => 
-        Closure.Action(closure.Context.As<TContext>(), (Action<TContext>)closure.Delegate);
-    public static ClosureAction<TContext, TArg> AsClosureAction<TContext, TArg>(this AnonymousClosure closure) => 
-        Closure.Action(closure.Context.As<TContext>(), (Action<TContext, TArg>)closure.Delegate);
-    public static ClosureRefAction<TContext, TArg> AsClosureRefAction<TContext, TArg>(this AnonymousClosure closure) => 
-        Closure.Action(closure.Context.As<TContext>(), (RefActionWithNormalContext<TContext, TArg>)closure.Delegate);
+    public static ClosureAction<TContext> AsClosureAction<TContext>(this AnonymousClosure closure) =>
+        Closure.Action(
+            closure.Context.As<TContext>(),
+            closure.Delegate as Action<TContext> ?? throw new InvalidCastException($"Delegate must be of type {typeof(Action<TContext>).Name} when converting to {nameof(ClosureAction<TContext>)}.")
+        );
+    public static ClosureAction<TContext, TArg> AsClosureAction<TContext, TArg>(this AnonymousClosure closure) =>
+        Closure.Action(
+            closure.Context.As<TContext>(),
+            closure.Delegate as Action<TContext, TArg> ?? throw new InvalidCastException($"Delegate must be of type {typeof(Action<TContext, TArg>).Name} when converting to {nameof(ClosureAction<TContext, TArg>)}.")
+        );
+    public static ClosureRefAction<TContext, TArg> AsClosureRefAction<TContext, TArg>(this AnonymousClosure closure) =>
+        Closure.RefAction(
+            closure.Context.As<TContext>(),
+            closure.Delegate as RefActionWithNormalContext<TContext, TArg> ?? throw new InvalidCastException($"Delegate must be of type {typeof(RefActionWithNormalContext<TContext, TArg>).Name} when converting to {nameof(ClosureRefAction<TContext, TArg>)}.")
+        );
     
     // Mutating Actions
-    public static MutatingClosureAction<TContext> AsMutatingClosureAction<TContext>(this AnonymousClosure closure) => 
-        Closure.Action(closure.Context.As<TContext>(), (RefAction<TContext>)closure.Delegate, closure.MutatingBehaviour);
-    public static MutatingClosureAction<TContext, TArg> AsMutatingClosureAction<TContext, TArg>(this AnonymousClosure closure) => 
-        Closure.Action(closure.Context.As<TContext>(), (ActionWithRefContext<TContext, TArg>)closure.Delegate, closure.MutatingBehaviour);
-    public static MutatingClosureRefAction<TContext, TArg> AsMutatingClosureRefAction<TContext, TArg>(this AnonymousClosure closure) => 
-        Closure.Action(closure.Context.As<TContext>(), (RefAction<TContext, TArg>)closure.Delegate, closure.MutatingBehaviour);
-    
+    public static MutatingClosureAction<TContext> AsMutatingClosureAction<TContext>(this AnonymousClosure closure) =>
+        MutatingClosure.Action(
+            closure.Context.As<TContext>(),
+            closure.Delegate as RefAction<TContext> ?? throw new InvalidCastException($"Delegate must be of type {typeof(RefAction<TContext>).Name} when converting to {nameof(MutatingClosureAction<TContext>)}.")
+        );
+    public static MutatingClosureAction<TContext, TArg> AsMutatingClosureAction<TContext, TArg>(this AnonymousClosure closure) =>
+        MutatingClosure.Action(
+            closure.Context.As<TContext>(),
+            closure.Delegate as ActionWithRefContext<TContext, TArg> ?? throw new InvalidCastException($"Delegate must be of type {typeof(ActionWithRefContext<TContext, TArg>).Name} when converting to {nameof(MutatingClosureAction<TContext, TArg>)}.")
+        );
+    public static MutatingClosureRefAction<TContext, TArg> AsMutatingClosureRefAction<TContext, TArg>(this AnonymousClosure closure) =>
+        MutatingClosure.RefAction(
+            closure.Context.As<TContext>(), 
+            closure.Delegate as RefAction<TContext, TArg> ?? throw new InvalidCastException($"Delegate must be of type {typeof(RefAction<TContext, TArg>).Name} when converting to {nameof(MutatingClosureRefAction<TContext, TArg>)}.")
+        );
+
     // Normal Functions
-    public static ClosureFunc<TContext, TReturn> AsClosureFunc<TContext, TReturn>(this AnonymousClosure closure) => 
-        Closure.Func(closure.Context.As<TContext>(), (Func<TContext, TReturn>)closure.Delegate);
-    public static ClosureFunc<TContext, TArg, TReturn> AsClosureFunc<TContext, TArg, TReturn>(this AnonymousClosure closure) => 
-        Closure.Func(closure.Context.As<TContext>(), (Func<TContext, TArg, TReturn>)closure.Delegate);
-    public static ClosureRefFunc<TContext, TArg, TReturn> AsClosureRefFunc<TContext, TArg, TReturn>(this AnonymousClosure closure) => 
-        Closure.Func(closure.Context.As<TContext>(), (RefFuncWithNormalContext<TContext, TArg, TReturn>)closure.Delegate);
-    
+    public static ClosureFunc<TContext, TReturn> AsClosureFunc<TContext, TReturn>(this AnonymousClosure closure) =>
+        Closure.Func(
+            closure.Context.As<TContext>(),
+            closure.Delegate as Func<TContext, TReturn> ?? throw new InvalidCastException($"Delegate must be of type {typeof(Func<TContext, TReturn>).Name} when converting to {nameof(ClosureFunc<TContext, TReturn>)}.")
+        );
+    public static ClosureFunc<TContext, TArg, TReturn> AsClosureFunc<TContext, TArg, TReturn>(this AnonymousClosure closure) =>
+        Closure.Func(
+            closure.Context.As<TContext>(),
+            closure.Delegate as Func<TContext, TArg, TReturn> ?? throw new InvalidCastException($"Delegate must be of type {typeof(Func<TContext, TArg, TReturn>).Name} when converting to {nameof(ClosureFunc<TContext, TArg, TReturn>)}.")
+        );
+    public static ClosureRefFunc<TContext, TArg, TReturn> AsClosureRefFunc<TContext, TArg, TReturn>(this AnonymousClosure closure) =>
+        Closure.RefFunc(
+            closure.Context.As<TContext>(),
+            closure.Delegate as RefFuncWithNormalContext<TContext, TArg, TReturn> ?? throw new InvalidCastException($"Delegate must be of type {typeof(RefFuncWithNormalContext<TContext, TArg, TReturn>).Name} when converting to {nameof(ClosureRefFunc<TContext, TArg, TReturn>)}.")
+        );
+
     // Mutating Functions
-    public static MutatingClosureFunc<TContext, TReturn> AsMutatingClosureFunc<TContext, TReturn>(this AnonymousClosure closure) => 
-        Closure.Func(closure.Context.As<TContext>(), (RefFunc<TContext, TReturn>)closure.Delegate, closure.MutatingBehaviour);
-    public static MutatingClosureFunc<TContext, TArg, TReturn> AsMutatingClosureFunc<TContext, TArg, TReturn>(this AnonymousClosure closure) => 
-        Closure.Func(closure.Context.As<TContext>(), (FuncWithRefContext<TContext, TArg, TReturn>)closure.Delegate, closure.MutatingBehaviour);
-    public static MutatingClosureRefFunc<TContext, TArg, TReturn> AsMutatingClosureRefFunc<TContext, TArg, TReturn>(this AnonymousClosure closure) => 
-        Closure.Func(closure.Context.As<TContext>(), (RefFunc<TContext, TArg, TReturn>)closure.Delegate, closure.MutatingBehaviour);
-    
+    public static MutatingClosureFunc<TContext, TReturn> AsMutatingClosureFunc<TContext, TReturn>(this AnonymousClosure closure) =>
+        MutatingClosure.Func(
+            closure.Context.As<TContext>(),
+            closure.Delegate as RefFunc<TContext, TReturn> ?? throw new InvalidCastException($"Delegate must be of type {typeof(RefFunc<TContext, TReturn>).Name} when converting to {nameof(MutatingClosureFunc<TContext, TReturn>)}.")
+        );
+    public static MutatingClosureFunc<TContext, TArg, TReturn> AsMutatingClosureFunc<TContext, TArg, TReturn>(this AnonymousClosure closure) =>
+        MutatingClosure.Func(
+            closure.Context.As<TContext>(),
+            closure.Delegate as FuncWithRefContext<TContext, TArg, TReturn> ?? throw new InvalidCastException($"Delegate must be of type {typeof(FuncWithRefContext<TContext, TArg, TReturn>).Name} when converting to {nameof(MutatingClosureFunc<TContext, TArg, TReturn>)}.")
+        );
+    public static MutatingClosureRefFunc<TContext, TArg, TReturn> AsMutatingClosureRefFunc<TContext, TArg, TReturn>(this AnonymousClosure closure) =>
+        MutatingClosure.RefFunc(
+            closure.Context.As<TContext>(), 
+            closure.Delegate as RefFunc<TContext, TArg, TReturn> ?? throw new InvalidCastException($"Delegate must be of type {typeof(RefFunc<TContext, TArg, TReturn>).Name} when converting to {nameof(MutatingClosureRefFunc<TContext, TArg, TReturn>)}."
+            )
+        );
+
     // Conversion to AnonymousClosureAction
-    public static AnonymousClosureAction AsAnonymousAction<TContext>(this ClosureAction<TContext> closure) =>
+    public static AnonymousClosureAction AsAnonymousAction<TContext>(this ClosureAction<TContext> closure) where TContext : notnull =>
         AnonymousClosure.Action(AnonymousValue.From(closure.Context), closure.Delegate);
-    public static AnonymousClosureAction<TArg> AsAnonymousAction<TContext, TArg>(this ClosureAction<TContext, TArg> closure) =>
+    public static AnonymousClosureAction<TArg> AsAnonymousAction<TContext, TArg>(this ClosureAction<TContext, TArg> closure) where TContext : notnull =>
         AnonymousClosure.Action<TArg>(AnonymousValue.From(closure.Context), closure.Delegate);
-    public static AnonymousClosureAction<TArg> AsAnonymousAction<TContext, TArg>(this ClosureRefAction<TContext, TArg> closure) =>
+    public static AnonymousClosureAction<TArg> AsAnonymousAction<TContext, TArg>(this ClosureRefAction<TContext, TArg> closure) where TContext : notnull =>
         AnonymousClosure.Action<TArg>(AnonymousValue.From(closure.Context), closure.Delegate);
-    
-    public static AnonymousClosureAction AsAnonymousAction<TContext>(this MutatingClosureAction<TContext> closure) =>
-        AnonymousClosure.Action(AnonymousValue.From(closure.Context), closure.Delegate, closure.MutatingBehaviour);
-    public static AnonymousClosureAction<TArg> AsAnonymousAction<TContext, TArg>(this MutatingClosureAction<TContext, TArg> closure) =>
-        AnonymousClosure.Action<TArg>(AnonymousValue.From(closure.Context), closure.Delegate, closure.MutatingBehaviour);
-    public static AnonymousClosureAction<TArg> AsAnonymousAction<TContext, TArg>(this MutatingClosureRefAction<TContext, TArg> closure) =>
-        AnonymousClosure.Action<TArg>(AnonymousValue.From(closure.Context), closure.Delegate, closure.MutatingBehaviour);
-    
+
+    public static AnonymousClosureAction AsAnonymousAction<TContext>(this MutatingClosureAction<TContext> closure) where TContext : notnull =>
+        AnonymousClosure.Action(AnonymousValue.From(closure.Context), closure.Delegate, MutatingBehaviour.Mutate);
+    public static AnonymousClosureAction<TArg> AsAnonymousAction<TContext, TArg>(this MutatingClosureAction<TContext, TArg> closure) where TContext : notnull =>
+        AnonymousClosure.Action<TArg>(AnonymousValue.From(closure.Context), closure.Delegate, MutatingBehaviour.Mutate);
+    public static AnonymousClosureAction<TArg> AsAnonymousAction<TContext, TArg>(this MutatingClosureRefAction<TContext, TArg> closure) where TContext : notnull =>
+        AnonymousClosure.Action<TArg>(AnonymousValue.From(closure.Context), closure.Delegate, MutatingBehaviour.Mutate);
+
     // Conversion to AnonymousClosureFunc
-    public static AnonymousClosureFunc<TReturn> AsAnonymousFunc<TContext, TReturn>(this ClosureFunc<TContext, TReturn> closure) =>
+    public static AnonymousClosureFunc<TReturn> AsAnonymousFunc<TContext, TReturn>(this ClosureFunc<TContext, TReturn> closure) where TContext : notnull =>
         AnonymousClosure.Func<TReturn>(AnonymousValue.From(closure.Context), closure.Delegate);
-    public static AnonymousClosureFunc<TArg, TReturn> AsAnonymousFunc<TContext, TArg, TReturn>(this ClosureFunc<TContext, TArg, TReturn> closure) =>
+    public static AnonymousClosureFunc<TArg, TReturn> AsAnonymousFunc<TContext, TArg, TReturn>(this ClosureFunc<TContext, TArg, TReturn> closure) where TContext : notnull =>
         AnonymousClosure.Func<TArg, TReturn>(AnonymousValue.From(closure.Context), closure.Delegate);
-    public static AnonymousClosureFunc<TArg, TReturn> AsAnonymousFunc<TContext, TArg, TReturn>(this ClosureRefFunc<TContext, TArg, TReturn> closure) =>
-        AnonymousClosure.Func<TArg, TReturn>(AnonymousValue.From(closure.Context), closure.Delegate);   
+    public static AnonymousClosureFunc<TArg, TReturn> AsAnonymousFunc<TContext, TArg, TReturn>(this ClosureRefFunc<TContext, TArg, TReturn> closure) where TContext : notnull =>
+        AnonymousClosure.Func<TArg, TReturn>(AnonymousValue.From(closure.Context), closure.Delegate);
+
+    public static AnonymousClosureFunc<TReturn> AsAnonymousFunc<TContext, TReturn>(this MutatingClosureFunc<TContext, TReturn> closure) where TContext : notnull =>
+        AnonymousClosure.Func<TReturn>(AnonymousValue.From(closure.Context), closure.Delegate, MutatingBehaviour.Mutate);
+    public static AnonymousClosureFunc<TArg, TReturn> AsAnonymousFunc<TContext, TArg, TReturn>(this MutatingClosureFunc<TContext, TArg, TReturn> closure) where TContext : notnull =>
+        AnonymousClosure.Func<TArg, TReturn>(AnonymousValue.From(closure.Context), closure.Delegate, MutatingBehaviour.Mutate);
+    public static AnonymousClosureFunc<TArg, TReturn> AsAnonymousFunc<TContext, TArg, TReturn>(this MutatingClosureRefFunc<TContext, TArg, TReturn> closure) where TContext : notnull =>
+        AnonymousClosure.Func<TArg, TReturn>(AnonymousValue.From(closure.Context), closure.Delegate, MutatingBehaviour.Mutate);
+
+    // Conversion between anonymous closures
+    public static AnonymousClosure AsAnonymous(this AnonymousClosureAction closure) =>
+        AnonymousClosure.Create(closure.Context, closure.Delegate, closure.MutatingBehaviour);
+    public static AnonymousClosureAction AsAnonymousAction(this AnonymousClosure closure) => 
+        AnonymousClosure.Action(closure.Context, closure.Delegate, closure.MutatingBehaviour);
     
-    public static AnonymousClosureFunc<TReturn> AsAnonymousFunc<TContext, TReturn>(this MutatingClosureFunc<TContext, TReturn> closure) =>
-        AnonymousClosure.Func<TReturn>(AnonymousValue.From(closure.Context), closure.Delegate, closure.MutatingBehaviour);
-    public static AnonymousClosureFunc<TArg, TReturn> AsAnonymousFunc<TContext, TArg, TReturn>(this MutatingClosureFunc<TContext, TArg, TReturn> closure) =>
-        AnonymousClosure.Func<TArg, TReturn>(AnonymousValue.From(closure.Context), closure.Delegate, closure.MutatingBehaviour);
-    public static AnonymousClosureFunc<TArg, TReturn> AsAnonymousFunc<TContext, TArg, TReturn>(this MutatingClosureRefFunc<TContext, TArg, TReturn> closure) =>
-        AnonymousClosure.Func<TArg, TReturn>(AnonymousValue.From(closure.Context), closure.Delegate, closure.MutatingBehaviour);
-    
-    // Conversion to AnonymousClosure
-    public static AnonymousClosure AsAnonymous(this AnonymousClosureAction closure) => 
-        AnonymousClosure.Create(AnonymousValue.From(closure.Context), closure.Delegate, closure.MutatingBehaviour);
     public static AnonymousClosure AsAnonymous<TArg>(this AnonymousClosureAction<TArg> closure) =>
-        AnonymousClosure.Create(AnonymousValue.From(closure.Context), closure.Delegate, closure.MutatingBehaviour);
-    
+        AnonymousClosure.Create(closure.Context, closure.Delegate, closure.MutatingBehaviour);
+    public static AnonymousClosureAction<TArg> AsAnonymousAction<TArg>(this AnonymousClosure closure) => 
+        AnonymousClosure.Action<TArg>(closure.Context, closure.Delegate, closure.MutatingBehaviour);
+
     public static AnonymousClosure AsAnonymous<TReturn>(this AnonymousClosureFunc<TReturn> closure) =>
-        AnonymousClosure.Create(AnonymousValue.From(closure.Context), closure.Delegate, closure.MutatingBehaviour);
-    public static AnonymousClosure AsAnonymous<TArg, TReturn>(this AnonymousClosureFunc<TArg, TReturn> closure) =>
-        AnonymousClosure.Create(AnonymousValue.From(closure.Context), closure.Delegate, closure.MutatingBehaviour);
+        AnonymousClosure.Create(closure.Context, closure.Delegate, closure.MutatingBehaviour);
+    public static AnonymousClosureFunc<TReturn> AsAnonymousFunc<TReturn>(this AnonymousClosure closure) => 
+        AnonymousClosure.Func<TReturn>(closure.Context, closure.Delegate, closure.MutatingBehaviour);
     
+    public static AnonymousClosure AsAnonymous<TArg, TReturn>(this AnonymousClosureFunc<TArg, TReturn> closure) =>
+        AnonymousClosure.Create(closure.Context, closure.Delegate, closure.MutatingBehaviour);
+
+    public static AnonymousClosureFunc<TArg, TReturn> AsAnonymousFunc<TArg, TReturn>(this AnonymousClosure closure) =>
+        AnonymousClosure.Func<TArg, TReturn>(closure.Context, closure.Delegate, closure.MutatingBehaviour);
+
     // Conversion to Typed Closures
     public static ClosureAction<TContext> AsClosureAction<TContext>(this AnonymousClosureAction closure) =>
-        Closure.Action(closure.Context.As<TContext>(), (Action<TContext>)closure.Delegate);
+        Closure.Action(
+            closure.Context.As<TContext>(),
+            closure.Delegate as Action<TContext> ?? throw new InvalidCastException($"Delegate must be of type {typeof(Action<TContext>).Name} when converting to {nameof(ClosureAction<TContext>)}.")
+        );
     public static ClosureAction<TContext, TArg> AsClosureAction<TContext, TArg>(this AnonymousClosureAction<TArg> closure) =>
-        Closure.Action<TContext, TArg>(closure.Context.As<TContext>(), (Action<TContext, TArg>)closure.Delegate);
+        Closure.Action(
+            closure.Context.As<TContext>(),
+            closure.Delegate as Action<TContext, TArg> ?? throw new InvalidCastException($"Delegate must be of type {typeof(Action<TContext, TArg>).Name} when converting to {nameof(ClosureAction<TContext, TArg>)}.")
+        );
     public static ClosureRefAction<TContext, TArg> AsClosureRefAction<TContext, TArg>(this AnonymousClosureAction<TArg> closure) =>
-        Closure.Action<TContext, TArg>(closure.Context.As<TContext>(), (RefActionWithNormalContext<TContext, TArg>)closure.Delegate);
-    
+        Closure.RefAction(
+            closure.Context.As<TContext>(),
+            closure.Delegate as RefActionWithNormalContext<TContext, TArg> ?? throw new InvalidCastException($"Delegate must be of type {typeof(RefActionWithNormalContext<TContext, TArg>).Name} when converting to {nameof(ClosureRefAction<TContext, TArg>)}.")
+        );
+
     public static MutatingClosureAction<TContext> AsMutatingClosureAction<TContext>(this AnonymousClosureAction closure) =>
-        Closure.Action<TContext>(closure.Context.As<TContext>(), (RefAction<TContext>)closure.Delegate, closure.MutatingBehaviour);
+        MutatingClosure.Action(
+            closure.Context.As<TContext>(),
+            closure.Delegate as RefAction<TContext> ?? throw new InvalidCastException($"Delegate must be of type {typeof(RefAction<TContext>).Name} when converting to {nameof(MutatingClosureAction<TContext>)}.")
+        );
     public static MutatingClosureAction<TContext, TArg> AsMutatingClosureAction<TContext, TArg>(this AnonymousClosureAction<TArg> closure) =>
-        Closure.Action<TContext, TArg>(closure.Context.As<TContext>(), (ActionWithRefContext<TContext, TArg>)closure.Delegate, closure.MutatingBehaviour);
+        MutatingClosure.Action(
+            closure.Context.As<TContext>(),
+            closure.Delegate as ActionWithRefContext<TContext, TArg> ?? throw new InvalidCastException($"Delegate must be of type {typeof(ActionWithRefContext<TContext, TArg>).Name} when converting to {nameof(MutatingClosureAction<TContext, TArg>)}.")
+        );
     public static MutatingClosureRefAction<TContext, TArg> AsMutatingClosureRefAction<TContext, TArg>(this AnonymousClosureAction<TArg> closure) =>
-        Closure.Action<TContext, TArg>(closure.Context.As<TContext>(), (RefAction<TContext, TArg>)closure.Delegate, closure.MutatingBehaviour);
-    
+        MutatingClosure.RefAction(
+            closure.Context.As<TContext>(),
+            closure.Delegate as RefAction<TContext, TArg> ?? throw new InvalidCastException($"Delegate must be of type {typeof(RefAction<TContext, TArg>).Name} when converting to {nameof(MutatingClosureRefAction<TContext, TArg>)}.")
+        );
+
     public static ClosureFunc<TContext, TReturn> AsClosureFunc<TContext, TReturn>(this AnonymousClosureFunc<TReturn> closure) =>
-        Closure.Func<TContext, TReturn>(closure.Context.As<TContext>(), (Func<TContext, TReturn>)closure.Delegate);
+        Closure.Func(
+            closure.Context.As<TContext>(),
+            closure.Delegate as Func<TContext, TReturn> ?? throw new InvalidCastException($"Delegate must be of type {typeof(Func<TContext, TReturn>).Name} when converting to {nameof(ClosureFunc<TContext, TReturn>)}.")
+        );
     public static ClosureFunc<TContext, TArg, TReturn> AsClosureFunc<TContext, TArg, TReturn>(this AnonymousClosureFunc<TArg, TReturn> closure) =>
-        Closure.Func<TContext, TArg, TReturn>(closure.Context.As<TContext>(), (Func<TContext, TArg, TReturn>)closure.Delegate);
+        Closure.Func(
+            closure.Context.As<TContext>(),
+            closure.Delegate as Func<TContext, TArg, TReturn> ?? throw new InvalidCastException($"Delegate must be of type {typeof(Func<TContext, TArg, TReturn>).Name} when converting to {nameof(ClosureFunc<TContext, TArg, TReturn>)}.")
+        );
     public static ClosureRefFunc<TContext, TArg, TReturn> AsClosureRefFunc<TContext, TArg, TReturn>(this AnonymousClosureFunc<TArg, TReturn> closure) =>
-        Closure.Func<TContext, TArg, TReturn>(closure.Context.As<TContext>(), (RefFuncWithNormalContext<TContext, TArg, TReturn>)closure.Delegate);
-    
+        Closure.RefFunc(
+            closure.Context.As<TContext>(),
+            closure.Delegate as RefFuncWithNormalContext<TContext, TArg, TReturn> ?? throw new InvalidCastException($"Delegate must be of type {typeof(RefFuncWithNormalContext<TContext, TArg, TReturn>).Name} when converting to {nameof(ClosureRefFunc<TContext, TArg, TReturn>)}.")
+        );
+
     public static MutatingClosureFunc<TContext, TReturn> AsMutatingClosureFunc<TContext, TReturn>(this AnonymousClosureFunc<TReturn> closure) =>
-        Closure.Func<TContext, TReturn>(closure.Context.As<TContext>(), (RefFunc<TContext, TReturn>)closure.Delegate, closure.MutatingBehaviour);
+        MutatingClosure.Func(
+            closure.Context.As<TContext>(),
+            closure.Delegate as RefFunc<TContext, TReturn> ?? throw new InvalidCastException($"Delegate must be of type {typeof(RefFunc<TContext, TReturn>).Name} when converting to {nameof(MutatingClosureFunc<TContext, TReturn>)}.")
+        );
     public static MutatingClosureFunc<TContext, TArg, TReturn> AsMutatingClosureFunc<TContext, TArg, TReturn>(this AnonymousClosureFunc<TArg, TReturn> closure) =>
-        Closure.Func<TContext, TArg, TReturn>(closure.Context.As<TContext>(), (FuncWithRefContext<TContext, TArg, TReturn>)closure.Delegate, closure.MutatingBehaviour);
+        MutatingClosure.Func(
+            closure.Context.As<TContext>(),
+            closure.Delegate as FuncWithRefContext<TContext, TArg, TReturn> ?? throw new InvalidCastException($"Delegate must be of type {typeof(FuncWithRefContext<TContext, TArg, TReturn>).Name} when converting to {nameof(MutatingClosureFunc<TContext, TArg, TReturn>)}.")
+        );
     public static MutatingClosureRefFunc<TContext, TArg, TReturn> AsMutatingClosureRefFunc<TContext, TArg, TReturn>(this AnonymousClosureFunc<TArg, TReturn> closure) =>
-        Closure.Func<TContext, TArg, TReturn>(closure.Context.As<TContext>(), (RefFunc<TContext, TArg, TReturn>)closure.Delegate, closure.MutatingBehaviour);
+        MutatingClosure.RefFunc(
+            closure.Context.As<TContext>(),
+            closure.Delegate as RefFunc<TContext, TArg, TReturn> ?? throw new InvalidCastException($"Delegate must be of type {typeof(RefFunc<TContext, TArg, TReturn>).Name} when converting to {nameof(MutatingClosureRefFunc<TContext, TArg, TReturn>)}.")
+        );
 }

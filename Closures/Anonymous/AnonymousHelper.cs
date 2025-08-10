@@ -1,43 +1,34 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 
 namespace Closures;
 
-internal static class AnonymousHelper {
-    static readonly Dictionary<Type, Type> s_closureTypeToInterfaceTypeMap = new Dictionary<Type, Type>();
-    static readonly Dictionary<Type, Type[]> s_interfaceTypeToGenericArgumentsMap = new Dictionary<Type, Type[]>();
-    static readonly Dictionary<Type, Type[]> s_delegateTypeToGenericArgumentsMap = new Dictionary<Type, Type[]>();
+public static class AnonymousHelper {
+    static readonly ConcurrentDictionary<Type, Type> s_closureTypeToInterfaceTypeMap = new ();
+    static readonly ConcurrentDictionary<Type, Type[]> s_interfaceTypeToGenericArgumentsMap = new ();
+    static readonly ConcurrentDictionary<Type, Type[]> s_delegateTypeToGenericArgumentsMap = new ();
 
     public static Type GetInterfaceType<TClosureType>() where TClosureType : IClosure {
-        if (s_closureTypeToInterfaceTypeMap.TryGetValue(typeof(TClosureType), out var interfaceType)) {
+        return s_closureTypeToInterfaceTypeMap.GetOrAdd(typeof(TClosureType), type => {
+            var interfaceType = type.GetInterfaces()
+                .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IClosure<,>));
+
+            if (interfaceType is null)
+                throw new InvalidOperationException(
+                    $"The type {typeof(TClosureType).Name} does not implement IClosure<> interface.");
+
             return interfaceType;
-        }
-
-        // If not found, create the interface type dynamically
-        interfaceType = typeof(TClosureType).GetInterfaces()
-            .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IClosure<,>));
-
-        if (interfaceType is null)
-            throw new InvalidOperationException($"The type {typeof(TClosureType).Name} does not implement IClosure<> interface.");
-
-        s_closureTypeToInterfaceTypeMap.Add(typeof(TClosureType), interfaceType);
-        return interfaceType;
+        });
     }
     
     public static Type[] GetInterfaceGenericArguments(Type interfaceType) {
-        if (s_interfaceTypeToGenericArgumentsMap.TryGetValue(interfaceType, out var genericArguments)) {
-            return genericArguments;
-        }
-
-        // If not found, get the generic arguments from the interface type
-        genericArguments = interfaceType.GetGenericArguments();
-        s_interfaceTypeToGenericArgumentsMap.Add(interfaceType, genericArguments);
-        return genericArguments;
+        return s_interfaceTypeToGenericArgumentsMap.GetOrAdd(interfaceType, type => type.GetGenericArguments());
     }
 
-    public static bool CanConvert<TClosureType, TClosure>(TClosure closure) where TClosureType : IClosure where TClosure : IAnonymousClosure {
+    public static bool CanConvert<TFrom, TTo>(TFrom closure) where TTo : IClosure where TFrom : IAnonymousClosure {
         var anonymousContextType = closure.Context.GetUnderlyingType();
         var anonymousDelegateType = closure.Delegate.GetType();
-        var conversionInterfaceType = GetInterfaceType<TClosureType>();
+        var conversionInterfaceType = GetInterfaceType<TTo>();
         var genericArguments = GetInterfaceGenericArguments(conversionInterfaceType);
         
         return (genericArguments[0] == anonymousContextType || genericArguments[0] == typeof(AnonymousValue))
@@ -45,8 +36,14 @@ internal static class AnonymousHelper {
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool ShouldThrow(Exception ex) {
-        return ex is InvalidOperationException or InvalidCastException or ArgumentException;
+    public static bool ShouldThrow(Exception ex, ExceptionHandlingPolicy policy) {
+        return policy switch {
+            ExceptionHandlingPolicy.HandleExpected => 
+                ex is not (InvalidOperationException or InvalidCastException or ArgumentException),
+            ExceptionHandlingPolicy.HandleAll => true,
+            ExceptionHandlingPolicy.HandleNone => false,
+            _ => throw new ArgumentOutOfRangeException(nameof(policy), policy, null)
+        };
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -55,19 +52,21 @@ internal static class AnonymousHelper {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsFunc(Delegate del) => del.Method.ReturnType != typeof(void);
     
-    public static Type[] GetGenericArguments(Delegate del) {
-        var delegateType = del.GetType();
-        
-        if (s_delegateTypeToGenericArgumentsMap.TryGetValue(delegateType, out var genericArguments))
-            return genericArguments;
-        
-        // If not found, get the generic arguments from the delegate type
-        genericArguments = delegateType.GetGenericArguments();
-        s_delegateTypeToGenericArgumentsMap.Add(delegateType, genericArguments);
-        return genericArguments;
+    public static Type[] GetGenericArguments(Delegate @delegate) {
+        return GetGenericArguments(@delegate.GetType());
+    }
+    public static Type[] GetGenericArguments(Type delegateType) {
+        return s_delegateTypeToGenericArgumentsMap.GetOrAdd(delegateType, type => type.GetGenericArguments());
+    }
+    
+    public static bool HasArg(Delegate del) { 
+        var genericArguments = GetGenericArguments(del);
+        return IsAction(del) ? genericArguments.Length > 1 : genericArguments.Length > 2;
     }
     public static bool HasArgOfType<TArg>(Delegate del) {
         var genericArguments = GetGenericArguments(del);
-        return genericArguments.Length > 1 && genericArguments[1] == typeof(TArg);
+        return IsAction(del) 
+            ? genericArguments.Length > 1 && genericArguments[1] == typeof(TArg) 
+            : genericArguments.Length > 2 && genericArguments[1] == typeof(TArg);
     }
 }
