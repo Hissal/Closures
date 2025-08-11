@@ -13,7 +13,7 @@
         <PackageProjectUrl>https://github.com/Hissal/Closures</PackageProjectUrl>
         <RepositoryUrl>https://github.com/Hissal/Closures</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
-        <PackageTags>Closure Capture Closures Delegate Event Action Func Function</PackageTags>
+        <PackageTags>closure capture closures delegate allocation-free  performance</PackageTags>
 
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageReadmeFile>README.md</PackageReadmeFile>
