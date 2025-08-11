@@ -126,6 +126,16 @@ public class AnonymousClosureFuncTest {
     }
     
     [Test]
+    public void AnonymousClosureFunc_InvokableAs_Works() {
+        var closure = AnonymousClosure.Func(10, (int ctx) => ctx * 2);
+
+        Assert.Multiple(() => {
+            Assert.That(closure.InvokableAs<Func<int>>(), Is.True);
+            Assert.That(closure.InvokableAs<Action<int>>(), Is.False);
+        });
+    }
+    
+    [Test]
     public void AnonymousClosureFunc_Equals_And_HashCode_Work() {
         int context = 7;
         Func<int, int> func = ctx => ctx + 1;

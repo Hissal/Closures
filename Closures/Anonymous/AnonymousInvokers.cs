@@ -58,7 +58,7 @@ public static class AnonymousInvokers {
     /// Thrown if the delegate type does not match the expected signature for an anonymous action invoker.
     /// </exception>
     public static ActionInvoker GetActionInvoker(Delegate @delegate) {
-        if (!AnonymousHelper.IsAction(@delegate))
+        if (!AnonymousClosureUtil.IsAction(@delegate))
             throw new ArgumentException($"Delegate '{@delegate.GetType()}' is not a valid action.");
         
         return s_actionInvokers.GetOrAdd(@delegate.GetType(), CreateActionInvoker);
@@ -66,7 +66,7 @@ public static class AnonymousInvokers {
 
     static ActionInvoker CreateActionInvoker(Type delegateType) {
         // delegate type, context and argument types
-        var genericArguments = AnonymousHelper.GetGenericArguments(delegateType);
+        var genericArguments = AnonymousClosureUtil.GetGenericArguments(delegateType);
             
         var contextType = genericArguments[0] ??
                           throw new InvalidOperationException(
@@ -172,7 +172,7 @@ public static class AnonymousInvokers {
     /// Thrown if the delegate type does not match the expected signature for an anonymous action invoker with an argument.
     /// </exception>
     public static ActionInvoker<TArg> GetActionInvoker<TArg>(Delegate @delegate) {
-        if (!AnonymousHelper.IsAction(@delegate))
+        if (!AnonymousClosureUtil.IsAction(@delegate))
             throw new ArgumentException($"Delegate '{@delegate.GetType()}' is not a valid action.");
         
         return (ActionInvoker<TArg>)s_argActionInvokers.GetOrAdd(@delegate.GetType(), CreateActionInvoker<TArg>);
@@ -180,7 +180,7 @@ public static class AnonymousInvokers {
 
     static ActionInvoker<TArg> CreateActionInvoker<TArg>(Type delegateType) {
         // delegate context and argument types
-        var genericArguments = AnonymousHelper.GetGenericArguments(delegateType);
+        var genericArguments = AnonymousClosureUtil.GetGenericArguments(delegateType);
         
         var contextType = genericArguments[0] ??
                           throw new InvalidOperationException(
@@ -298,7 +298,7 @@ public static class AnonymousInvokers {
     /// Thrown if the delegate type does not match the expected signature for an anonymous function invoker.
     /// </exception>>
     public static FuncInvoker<TReturn> GetFuncInvoker<TReturn>(Delegate @delegate) {
-        if (!AnonymousHelper.IsFunc(@delegate))
+        if (!AnonymousClosureUtil.IsFunc(@delegate))
             throw new ArgumentException($"Delegate '{@delegate.GetType()}' is not a valid function.");
     
         return (FuncInvoker<TReturn>)s_funcInvokers.GetOrAdd(@delegate.GetType(), CreateFuncInvoker<TReturn>);
@@ -306,7 +306,7 @@ public static class AnonymousInvokers {
 
     static FuncInvoker<TReturn> CreateFuncInvoker<TReturn>(Type delegateType) {
         // delegate context and return types
-        var genericArguments = AnonymousHelper.GetGenericArguments(delegateType);
+        var genericArguments = AnonymousClosureUtil.GetGenericArguments(delegateType);
         
         var contextType = genericArguments[0] ??
                           throw new InvalidOperationException(
@@ -428,7 +428,7 @@ public static class AnonymousInvokers {
     /// Thrown if the delegate type does not match the expected signature for an anonymous function invoker with an argument.
     /// </exception>
     public static FuncInvoker<TArg, TReturn> GetFuncInvoker<TArg, TReturn>(Delegate @delegate) {
-        if (!AnonymousHelper.IsFunc(@delegate))
+        if (!AnonymousClosureUtil.IsFunc(@delegate))
             throw new ArgumentException($"Delegate '{@delegate.GetType()}' is not a valid function.");
         
         return (FuncInvoker<TArg, TReturn>)s_argFuncInvokers.GetOrAdd(@delegate.GetType(), CreateFuncInvoker<TArg, TReturn>);
@@ -436,7 +436,7 @@ public static class AnonymousInvokers {
 
     static FuncInvoker<TArg, TReturn> CreateFuncInvoker<TArg, TReturn>(Type delegateType) {
         // delegate context and argument types
-        var genericArguments = AnonymousHelper.GetGenericArguments(delegateType);
+        var genericArguments = AnonymousClosureUtil.GetGenericArguments(delegateType);
         var contextType = genericArguments[0] ??
                           throw new InvalidOperationException(
                               $"Delegate type '{delegateType.Name}' does not have a context type.");

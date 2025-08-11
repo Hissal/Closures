@@ -26,6 +26,11 @@ public interface IAnonymousClosure : IClosure<AnonymousValue, Delegate> {
     /// Determines if this closure can be converted to the specified closure type.
     /// </summary>
     bool Is<TClosureType>() where TClosureType : IClosure;
+    
+    /// <summary>
+    /// Determines whether the closure can be invoked as if it was a delegate of type <typeparamref name="TDelegate"/>.
+    /// </summary>
+    bool InvokableAs<TDelegate>() where TDelegate : Delegate;
 }
 
 // TODO: Use source generators to generate all used delegate types and their invokers
@@ -55,7 +60,10 @@ public partial record struct AnonymousClosure : IAnonymousClosure {
     Delegate? cachedInvoker;
 
     public bool Is<TClosureType>() where TClosureType : IClosure => 
-        AnonymousHelper.CanConvert<AnonymousClosure, TClosureType>(this);
+        AnonymousClosureUtil.CanConvert<AnonymousClosure, TClosureType>(this);
+
+    public bool InvokableAs<TDelegate>() where TDelegate : Delegate => 
+        AnonymousClosureUtil.InvokableAs<TDelegate>(Delegate);
 
     /// <summary>
     /// Invokes the encapsulated delegate with the current context and mutating behaviour.
@@ -148,7 +156,7 @@ public partial record struct AnonymousClosure : IAnonymousClosure {
         }
         catch (Exception e) {
             // Ignore exceptions that are expected from delegate invocation
-            if (AnonymousHelper.ShouldThrow(e, exceptionHandlingPolicy))
+            if (AnonymousClosureUtil.ShouldThrow(e, exceptionHandlingPolicy))
                 throw;
 
             return Result.Failure(e);
@@ -172,7 +180,7 @@ public partial record struct AnonymousClosure : IAnonymousClosure {
         }
         catch (Exception e) {
             // Ignore exceptions that are expected from delegate invocation
-            if (AnonymousHelper.ShouldThrow(e, exceptionHandlingPolicy))
+            if (AnonymousClosureUtil.ShouldThrow(e, exceptionHandlingPolicy))
                 throw;
 
             return Result.Failure(e);
@@ -196,7 +204,7 @@ public partial record struct AnonymousClosure : IAnonymousClosure {
         }
         catch (Exception e) {
             // Ignore exceptions that are expected from delegate invocation
-            if (AnonymousHelper.ShouldThrow(e, exceptionHandlingPolicy))
+            if (AnonymousClosureUtil.ShouldThrow(e, exceptionHandlingPolicy))
                 throw;
 
             return Result.Failure(e);
@@ -219,7 +227,7 @@ public partial record struct AnonymousClosure : IAnonymousClosure {
         }
         catch (Exception e) {
             // Ignore exceptions that are expected from delegate invocation
-            if (AnonymousHelper.ShouldThrow(e, exceptionHandlingPolicy))
+            if (AnonymousClosureUtil.ShouldThrow(e, exceptionHandlingPolicy))
                 throw;
 
             return Result<TReturn>.Failure(e);
@@ -244,7 +252,7 @@ public partial record struct AnonymousClosure : IAnonymousClosure {
         }
         catch (Exception e) {
             // Ignore exceptions that are expected from delegate invocation
-            if (AnonymousHelper.ShouldThrow(e, exceptionHandlingPolicy))
+            if (AnonymousClosureUtil.ShouldThrow(e, exceptionHandlingPolicy))
                 throw;
 
             return Result<TReturn>.Failure(e);
@@ -269,7 +277,7 @@ public partial record struct AnonymousClosure : IAnonymousClosure {
         }
         catch (Exception e) {
             // Ignore exceptions that are expected from delegate invocation
-            if (AnonymousHelper.ShouldThrow(e, exceptionHandlingPolicy))
+            if (AnonymousClosureUtil.ShouldThrow(e, exceptionHandlingPolicy))
                 throw;
 
             return Result<TReturn>.Failure(e);

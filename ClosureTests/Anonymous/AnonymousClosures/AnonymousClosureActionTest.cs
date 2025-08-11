@@ -114,6 +114,16 @@ public class AnonymousClosureActionTest {
     }
     
     [Test]
+    public void AnonymousClosureAction_InvokableAs_Works() {
+        var closure = AnonymousClosure.Action(10, (int ctx) => { });
+
+        Assert.Multiple(() => {
+            Assert.That(closure.InvokableAs<Action>(), Is.True);
+            Assert.That(closure.InvokableAs<Action<int>>(), Is.False);
+        });
+    }
+    
+    [Test]
     public void AnonymousClosureAction_Equals_And_HashCode_Work() {
         int context = 7;
         Action<int> action = ctx => { };

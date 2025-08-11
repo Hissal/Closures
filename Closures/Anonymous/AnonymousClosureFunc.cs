@@ -18,7 +18,10 @@ public record struct AnonymousClosureFunc<TReturn> : IClosureFunc<AnonymousValue
     Delegate? cachedInvoker;
     
     public bool Is<TClosureType>() where TClosureType : IClosure => 
-        AnonymousHelper.CanConvert<AnonymousClosureFunc<TReturn>, TClosureType>(this);
+        AnonymousClosureUtil.CanConvert<AnonymousClosureFunc<TReturn>, TClosureType>(this);
+    
+    public bool InvokableAs<TDelegate>() where TDelegate : Delegate => 
+        AnonymousClosureUtil.InvokableAs<TDelegate>(Delegate);
     
     /// <summary>
     /// Invokes the encapsulated delegate with the current context and mutating behaviour.
@@ -48,7 +51,7 @@ public record struct AnonymousClosureFunc<TReturn> : IClosureFunc<AnonymousValue
             return true;
         }
         catch (Exception e) {
-            if (AnonymousHelper.ShouldThrow(e, exceptionHandlingPolicy)) {
+            if (AnonymousClosureUtil.ShouldThrow(e, exceptionHandlingPolicy)) {
                 throw;
             }
             
@@ -73,7 +76,7 @@ public record struct AnonymousClosureFunc<TReturn> : IClosureFunc<AnonymousValue
         }
         catch (Exception e) {
             // Ignore exceptions that are expected from delegate invocation
-            if (AnonymousHelper.ShouldThrow(e, exceptionHandlingPolicy)) {
+            if (AnonymousClosureUtil.ShouldThrow(e, exceptionHandlingPolicy)) {
                 throw;
             }
 
@@ -112,7 +115,10 @@ public record struct AnonymousClosureFunc<TArg, TReturn> : IClosureRefFunc<Anony
     Delegate? cachedInvoker;
     
     public bool Is<TClosureType>() where TClosureType : IClosure =>
-        AnonymousHelper.CanConvert<AnonymousClosureFunc<TArg, TReturn>, TClosureType>(this);
+        AnonymousClosureUtil.CanConvert<AnonymousClosureFunc<TArg, TReturn>, TClosureType>(this);
+    
+    public bool InvokableAs<TDelegate>() where TDelegate : Delegate => 
+        AnonymousClosureUtil.InvokableAs<TDelegate>(Delegate);
 
     /// <summary>
     /// Invokes the encapsulated delegate with the current context, argument, and mutating behaviour.
@@ -160,7 +166,7 @@ public record struct AnonymousClosureFunc<TArg, TReturn> : IClosureRefFunc<Anony
             return true;
         }
         catch (Exception e) {
-            if (AnonymousHelper.ShouldThrow(e, exceptionHandlingPolicy)) {
+            if (AnonymousClosureUtil.ShouldThrow(e, exceptionHandlingPolicy)) {
                 throw;
             }
 
@@ -187,7 +193,7 @@ public record struct AnonymousClosureFunc<TArg, TReturn> : IClosureRefFunc<Anony
         }
         catch (Exception e) {
             // Ignore exceptions that are expected from delegate invocation
-            if (AnonymousHelper.ShouldThrow(e, exceptionHandlingPolicy)) {
+            if (AnonymousClosureUtil.ShouldThrow(e, exceptionHandlingPolicy)) {
                 throw;
             }
 
@@ -213,7 +219,7 @@ public record struct AnonymousClosureFunc<TArg, TReturn> : IClosureRefFunc<Anony
             return true;
         }
         catch (Exception e) {
-            if (AnonymousHelper.ShouldThrow(e, exceptionHandlingPolicy)) {
+            if (AnonymousClosureUtil.ShouldThrow(e, exceptionHandlingPolicy)) {
                 throw;
             }
 
@@ -240,7 +246,7 @@ public record struct AnonymousClosureFunc<TArg, TReturn> : IClosureRefFunc<Anony
         }
         catch (Exception e) {
             // Ignore exceptions that are expected from delegate invocation
-            if (AnonymousHelper.ShouldThrow(e, exceptionHandlingPolicy)) {
+            if (AnonymousClosureUtil.ShouldThrow(e, exceptionHandlingPolicy)) {
                 throw;
             }
 

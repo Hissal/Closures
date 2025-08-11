@@ -352,6 +352,16 @@ public class AnonymousClosureTests {
             Assert.That(closure.Is<MutatingClosureFunc<int, int>>(), Is.False);
         });
     }
+    
+    [Test]
+    public void AnonymousClosure_InvokableAs_Works() {
+        var closure = AnonymousClosure.Create(AnonymousValue.From(42), (int ctx) => { });
+
+        Assert.Multiple(() => {
+            Assert.That(closure.InvokableAs<Action>(), Is.True);
+            Assert.That(closure.InvokableAs<Action<int>>(), Is.False);
+        });
+    }
 
     [Test]
     public void AnonymousClosure_Equals_And_HashCode_Work() {

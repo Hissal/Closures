@@ -8,10 +8,9 @@ namespace ClosureBenchmarks;
 
 public static class Program {
     public static void Main(string[] args) {
-        BenchmarkRunner.Run<AnonymousBenchmarks>();
+        BenchmarkRunner.Run<ActionVsClosureActionAsActionBenchmarks>();
         return;
-        var anonmark = new AnonymousBenchmarks();
-        
+ 
         var anonymous = Closure.Action(20, (int c) => {
             // Simulate some work
             var result = c + 1;
@@ -22,6 +21,95 @@ public static class Program {
 
         // Uncomment to run the ForLoopBenchmarks
         // BenchmarkRunner.Run<ForLoopBenchmarks>();
+    }
+}
+
+[MemoryDiagnoser(false)]
+[GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
+public class ActionVsClosureBenchmarks {
+    [Benchmark]
+    [BenchmarkCategory("1")]
+    public void Action() {
+        var context = 100;
+        var action = () => {
+            var result = context + 1;
+        };
+        
+        action.Invoke();
+    }
+
+    [Benchmark]
+    [BenchmarkCategory("1")]
+    public void ClosureAction() {
+        var context = 100;
+        var closure = Closure.Action(context, (int c) => {
+            var result = c + 1;
+        });
+        
+        closure.Invoke();
+    }
+    
+    [Benchmark]
+    [BenchmarkCategory("100000")]
+    public void Action_100000x() {
+        for (int i = 0; i < 1000000; i++) {
+            var context = 100;
+            var action = () => {
+                var result = context + 1;
+            };
+        
+            action.Invoke();
+        }
+    }
+
+    [Benchmark]
+    [BenchmarkCategory("100000")]
+    public void ClosureAction_100000x() {
+        for (int i = 0; i < 100000; i++) {
+            var context = 100;
+            var closure = Closure.Action(context, (int c) => {
+                var result = c + 1;
+            });
+        
+            closure.Invoke();
+        }
+    }
+}
+
+[MemoryDiagnoser(false)]
+[GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
+public class ActionVsAnonymousClosureBenchmarks {
+    [Benchmark]
+    [BenchmarkCategory("1")]
+    public void Action() {
+        var context = 100;
+        var action = () => {
+            var result = context + 1;
+        };
+
+        action.Invoke();
+    }
+
+    [Benchmark]
+    [BenchmarkCategory("1")]
+    public void ClosureAction() {
+        var context = 100;
+        var closure = Closure.Action(context, (int c) => {
+            var result = c + 1;
+        });
+
+        closure.Invoke();
+    }
+
+    [Benchmark]
+    [BenchmarkCategory("1")]
+    public void ClosureAction_AsAnonymous() {
+        var context = 100;
+        var anonymous = Closure.Action(context, (int c) => {
+            var result = c + 1;
+        }).AsAnonymous();
+
+        anonymous.Invoke();
     }
 }
 
@@ -89,6 +177,32 @@ public class AnonymousValueBechmarks {
                 throw new InvalidOperationException();
             }
         }
+    }
+}
+
+[MemoryDiagnoser(false)]
+[GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
+public class ActionVsClosureActionAsActionBenchmarks {
+    [Benchmark]
+    [BenchmarkCategory("1")]
+    public void Action() {
+        var context = 100;
+        var action = () => {
+            var result = context + 1;
+        };
+
+        action.Invoke();
+    }
+
+    [Benchmark]
+    [BenchmarkCategory("1")]
+    public void ClosureAction_AsAction() {
+        var context = 100;
+        var action = Closure.Action(context, (int c) => {
+            var result = c + 1;
+        }).AsAction();
+
+        action.Invoke();
     }
 }
 
@@ -366,18 +480,18 @@ public class AnonymousBenchmarks {
 public class ForLoopBenchmarks {
     readonly List<Action> actions3 = new List<Action>(3);
     readonly List<ClosureAction<int>> closureActions3 = new List<ClosureAction<int>>(3);
-    
+
     readonly List<Action> actions100 = new List<Action>(100);
     readonly List<ClosureAction<int>> closureActions100 = new List<ClosureAction<int>>(100);
-    
+
     readonly List<Action> actions10000 = new List<Action>(10000);
     readonly List<ClosureAction<int>> closureActions10000 = new List<ClosureAction<int>>(10000);
-    
+
     void DummyAction(int context) {
         // Simulate some work
         var result = context + 1;
     }
-    
+
     // [Benchmark]
     // [BenchmarkCategory("1")]
     // public void Action_CaptureI_3x() {
@@ -392,7 +506,7 @@ public class ForLoopBenchmarks {
     //         action.Invoke();
     //     }
     // }
-    
+
     [Benchmark]
     [BenchmarkCategory("1")]
     public void Action_CaptureTempI_3x() {
@@ -403,12 +517,12 @@ public class ForLoopBenchmarks {
             var action = new Action(() => DummyAction(tempI));
             actions3.Add(action);
         }
-        
+
         foreach (var action in actions3) {
             action.Invoke();
         }
     }
-    
+
     [Benchmark]
     [BenchmarkCategory("1")]
     public void ClosureAction_CaptureI_3x() {
@@ -418,12 +532,12 @@ public class ForLoopBenchmarks {
             var closure = Closure.Action(i, DummyAction);
             closureActions3.Add(closure);
         }
-        
+
         foreach (var action in closureActions3) {
             action.Invoke();
         }
     }
-    
+
     // [Benchmark]
     // [BenchmarkCategory("100")]
     // public void Action_CaptureI_100x() {
@@ -438,7 +552,7 @@ public class ForLoopBenchmarks {
     //         action.Invoke();
     //     }
     // }
-    
+
     [Benchmark]
     [BenchmarkCategory("100")]
     public void Action_CaptureTempI_100x() {
@@ -449,12 +563,12 @@ public class ForLoopBenchmarks {
             var action = new Action(() => DummyAction(tempI));
             actions100.Add(action);
         }
-        
+
         foreach (var action in actions100) {
             action.Invoke();
         }
     }
-    
+
     [Benchmark]
     [BenchmarkCategory("100")]
     public void ClosureAction_CaptureI_100x() {
@@ -464,12 +578,12 @@ public class ForLoopBenchmarks {
             var closure = Closure.Action(i, DummyAction);
             closureActions100.Add(closure);
         }
-        
+
         foreach (var action in closureActions100) {
             action.Invoke();
         }
     }
-    
+
     // [Benchmark]
     // [BenchmarkCategory("10000")]
     // public void Action_CaptureI_10000x() {
@@ -484,7 +598,7 @@ public class ForLoopBenchmarks {
     //         action.Invoke();
     //     }
     // }
-    
+
     [Benchmark]
     [BenchmarkCategory("10000")]
     public void Action_CaptureTempI_10000x() {
@@ -495,12 +609,12 @@ public class ForLoopBenchmarks {
             var action = new Action(() => DummyAction(tempI));
             actions10000.Add(action);
         }
-        
+
         foreach (var action in actions10000) {
             action.Invoke();
         }
     }
-    
+
     [Benchmark]
     [BenchmarkCategory("10000")]
     public void ClosureAction_CaptureI_10000x() {
@@ -510,7 +624,7 @@ public class ForLoopBenchmarks {
             var closure = Closure.Action(i, DummyAction);
             closureActions10000.Add(closure);
         }
-        
+
         foreach (var action in closureActions10000) {
             action.Invoke();
         }

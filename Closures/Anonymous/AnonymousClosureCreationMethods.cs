@@ -49,10 +49,10 @@ public partial record struct AnonymousClosure {
     /// <returns>An <see cref="AnonymousClosureAction"/> instance.</returns>
     /// <exception cref="ArgumentException">Thrown if the delegate does not match the required signature.</exception>
     public static AnonymousClosureAction Action(AnonymousValue context, Delegate @delegate, MutatingBehaviour mutatingBehaviour = MutatingBehaviour.Reset) {
-        if (!AnonymousHelper.IsAction(@delegate))
+        if (!AnonymousClosureUtil.IsAction(@delegate))
             throw new ArgumentException("Delegate must not have a return value.", nameof(@delegate));
         
-        if (AnonymousHelper.HasArg(@delegate))
+        if (AnonymousClosureUtil.HasArg(@delegate))
             throw new ArgumentException("Delegate must not have an argument.", nameof(@delegate));
 
         return Create<AnonymousClosureAction>(context, @delegate, mutatingBehaviour);
@@ -67,10 +67,10 @@ public partial record struct AnonymousClosure {
     /// <returns>An <see cref="AnonymousClosureAction{TArg}"/> instance.</returns>
     /// <exception cref="ArgumentException">Thrown if the delegate does not match the required signature.</exception>
     public static AnonymousClosureAction<TArg> Action<TArg>(AnonymousValue context, Delegate @delegate, MutatingBehaviour mutatingBehaviour = MutatingBehaviour.Reset) {
-        if (!AnonymousHelper.IsAction(@delegate))
+        if (!AnonymousClosureUtil.IsAction(@delegate))
             throw new ArgumentException("Delegate must not have a return value.", nameof(@delegate));
         
-        if (!AnonymousHelper.HasArgOfType<TArg>(@delegate))
+        if (!AnonymousClosureUtil.HasArgOfType<TArg>(@delegate))
             throw new ArgumentException($"Delegate must have an argument of type {typeof(TArg).Name}.", nameof(@delegate));
         
         return Create<AnonymousClosureAction<TArg>>(context, @delegate, mutatingBehaviour);
@@ -86,10 +86,10 @@ public partial record struct AnonymousClosure {
     /// <returns>An <see cref="AnonymousClosureFunc{TReturn}"/> instance.</returns>
     /// <exception cref="ArgumentException">Thrown if the delegate does not match the required signature.</exception>
     public static AnonymousClosureFunc<TReturn> Func<TReturn>(AnonymousValue context, Delegate @delegate, MutatingBehaviour mutatingBehaviour = MutatingBehaviour.Reset) {
-        if (!AnonymousHelper.IsFunc(@delegate))
+        if (!AnonymousClosureUtil.IsFunc(@delegate))
             throw new ArgumentException("Delegate must have a return value.", nameof(@delegate));
         
-        if (AnonymousHelper.HasArg(@delegate))
+        if (AnonymousClosureUtil.HasArg(@delegate))
             throw new ArgumentException("Delegate must not have an argument.", nameof(@delegate));
         
         return Create<AnonymousClosureFunc<TReturn>>(context, @delegate, mutatingBehaviour);
@@ -105,10 +105,10 @@ public partial record struct AnonymousClosure {
     /// <returns>An <see cref="AnonymousClosureFunc{TArg, TReturn}"/> instance.</returns>
     /// <exception cref="ArgumentException">Thrown if the delegate does not match the required signature.</exception>
     public static AnonymousClosureFunc<TArg, TReturn> Func<TArg, TReturn>(AnonymousValue context, Delegate @delegate, MutatingBehaviour mutatingBehaviour = MutatingBehaviour.Reset) {
-        if (!AnonymousHelper.IsFunc(@delegate))
+        if (!AnonymousClosureUtil.IsFunc(@delegate))
             throw new ArgumentException("Delegate must have a return value.", nameof(@delegate));
         
-        if (!AnonymousHelper.HasArgOfType<TArg>(@delegate))
+        if (!AnonymousClosureUtil.HasArgOfType<TArg>(@delegate))
             throw new ArgumentException($"Delegate must have an argument of type {typeof(TArg).Name}.", nameof(@delegate));
         
         return Create<AnonymousClosureFunc<TArg, TReturn>>(context, @delegate, mutatingBehaviour);
@@ -159,7 +159,7 @@ public partial record struct AnonymousClosure {
     /// Represents a <see cref="ClosureRefFunc{TContext,TArg,TResult}"/></summary>
     public static AnonymousClosureFunc<TArg, TReturn> Func<TContext, TArg, TReturn>(TContext context, RefFuncWithNormalContext<TContext, TArg, TReturn> @delegate) where TContext : notnull => 
         Create<AnonymousClosureFunc<TArg, TReturn>>(AnonymousValue.From(context), @delegate);
-    /// <summary> Creates an <see cref="AnonymousClosureFunc{TArg, TReturn}"/> using a <see cref="ActionWithRefContext{TContext, TArg, TReturn}"/>. <br></br>
+    /// <summary> Creates an <see cref="AnonymousClosureFunc{TArg, TReturn}"/> using a <see cref="FuncWithRefContext{TContext,TArg,TResult}"/>. <br></br>
     /// Represents a <see cref="MutatingClosureFunc{TContext,TArg,TResult}"/></summary>
     public static AnonymousClosureFunc<TArg, TReturn> Func<TContext, TArg, TReturn>(TContext context, FuncWithRefContext<TContext, TArg, TReturn> @delegate, MutatingBehaviour mutatingBehaviour = MutatingBehaviour.Mutate) where TContext : notnull => 
         Create<AnonymousClosureFunc<TArg, TReturn>>(AnonymousValue.From(context), @delegate, mutatingBehaviour);

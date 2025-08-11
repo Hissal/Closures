@@ -17,7 +17,10 @@ public record struct AnonymousClosureAction : IClosureAction<AnonymousValue, Del
     Delegate? cachedInvoker;
     
     public bool Is<TClosureType>() where TClosureType : IClosure => 
-        AnonymousHelper.CanConvert<AnonymousClosureAction, TClosureType>(this);
+        AnonymousClosureUtil.CanConvert<AnonymousClosureAction, TClosureType>(this);
+    
+    public bool InvokableAs<TDelegate>() where TDelegate : Delegate => 
+        AnonymousClosureUtil.InvokableAs<TDelegate>(Delegate);
     
     /// <summary>
     /// Invokes the encapsulated delegate with the current context and mutating behaviour.
@@ -43,7 +46,7 @@ public record struct AnonymousClosureAction : IClosureAction<AnonymousValue, Del
         }
         catch (Exception e) {
             // Ignore exceptions that are expected from delegate invocation
-            if (AnonymousHelper.ShouldThrow(e, exceptionHandlingPolicy)) {
+            if (AnonymousClosureUtil.ShouldThrow(e, exceptionHandlingPolicy)) {
                 throw;
             }
 
@@ -81,8 +84,11 @@ public record struct AnonymousClosureAction<TArg> : IClosureRefAction<AnonymousV
     Delegate? cachedInvoker;
     
     public bool Is<TClosureType>() where TClosureType : IClosure =>
-        AnonymousHelper.CanConvert<AnonymousClosureAction<TArg>, TClosureType>(this);
+        AnonymousClosureUtil.CanConvert<AnonymousClosureAction<TArg>, TClosureType>(this);
 
+    public bool InvokableAs<TDelegate>() where TDelegate : Delegate => 
+        AnonymousClosureUtil.InvokableAs<TDelegate>(Delegate);
+    
     /// <summary>
     /// Invokes the encapsulated delegate with the current context, argument, and mutating behaviour.
     /// </summary>
@@ -123,7 +129,7 @@ public record struct AnonymousClosureAction<TArg> : IClosureRefAction<AnonymousV
         }
         catch (Exception e) {
             // Ignore exceptions that are expected from delegate invocation
-            if (AnonymousHelper.ShouldThrow(e, exceptionHandlingPolicy)) {
+            if (AnonymousClosureUtil.ShouldThrow(e, exceptionHandlingPolicy)) {
                 throw;
             }
 
@@ -147,7 +153,7 @@ public record struct AnonymousClosureAction<TArg> : IClosureRefAction<AnonymousV
         }
         catch (Exception e) {
             // Ignore exceptions that are expected from delegate invocation
-            if (AnonymousHelper.ShouldThrow(e, exceptionHandlingPolicy)) {
+            if (AnonymousClosureUtil.ShouldThrow(e, exceptionHandlingPolicy)) {
                 throw;
             }
 

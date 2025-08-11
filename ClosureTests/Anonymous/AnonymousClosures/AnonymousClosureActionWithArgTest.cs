@@ -197,6 +197,16 @@ public class AnonymousClosureActionWithArgTest {
     }
     
     [Test]
+    public void AnonymousClosureActionWithArg_InvokableAs_Works() {
+        var closure = AnonymousClosure.Action(10, (int ctx, string arg) => { });
+
+        Assert.Multiple(() => {
+            Assert.That(closure.InvokableAs<Action<string>>(), Is.True);
+            Assert.That(closure.InvokableAs<Action<int>>(), Is.False);
+        });
+    }
+    
+    [Test]
     public void AnonymousClosureActionWithArg_Equals_And_HashCode_Work() {
         int context = 7;
         Action<int, int> action = (ctx, arg) => { };
