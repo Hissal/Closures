@@ -138,8 +138,8 @@ Console.WriteLine(mutatingClosureFunc.Invoke()); // Output: 80
 Ref closures work similarly to mutating closures with the difference being that 
 they are ref structs that capture a reference to a context variable, allowing it to modify the original variable.
 
-- `RefActionClosure<TContext>` that captures a reference to a mutable context.
-- `RefFuncClosure<TContext, TReturn>` that captures a reference to a mutable context and returns a modified value.
+- `RefClosureAction<TContext>` that captures a reference to a mutable context.
+- `RefClosureFunc<TContext, TReturn>` that captures a reference to a mutable context and returns a modified value.
 
 ```csharp
 // Example of RefActionClosure
@@ -256,7 +256,8 @@ if (anonClosure.Is<ClosureFunc<string, int>>()) {
 - Anonymous closures are type-erased and do not enforce type safety at compile time. You must ensure that the delegate and context types are compatible when converting or invoking.
 - Useful for storing closures of different types in a single collection, or for APIs that need to accept arbitrary closures.
 
-However, with the flexibility comes some performance overhead compared to strongly-typed closures, so use them judiciously in performance-critical scenarios.
+With the flexibility comes some performance overhead compared to strongly-typed closures, so use them judiciously in performance-critical scenarios.
+If possible converting back to strongly-typed closures is recommended.
 
 | Method                    |       Mean |     Error |    StdDev | Allocated |
 |---------------------------|-----------:|----------:|----------:|----------:|
@@ -301,7 +302,9 @@ Func<int> func = closureFunc.AsFunc();
 Console.WriteLine(func.Invoke()); // Output: 3
 
 // You can also convert closures with arguments:
-var closureWithArg = Closure.Action(10, (int ctx, int arg) => Console.WriteLine($"Context: {ctx}, Arg: {arg}"));
+var closureWithArg = Closure.Action(10, (int ctx, int arg) => 
+    Console.WriteLine($"Context: {ctx}, Arg: {arg}"));
+
 Action<int> actionWithArg = closureWithArg.AsAction<int>();
 actionWithArg.Invoke(5); // Output: Context: 10, Arg: 5
 ```
@@ -310,9 +313,9 @@ However, there is a performance overhead when converting closures to delegates, 
 This is only done once for each closure and then the "invoker" delegate is cached for subsequent invocations.
 This means that doing this only once is not better than creating a normal action that captures the context.
 
-Where it is useful is for example when you want to pass a callback to a method that expects a delegate and need to capture some context without creating a heap allocation.
-In this case, you can create a closure and convert it to a delegate, which will be cached for subsequent conversions.
-Making it allocation free after the first time it is converted.
+Where can be useful is for example when you want to pass a callback to a method that expects a delegate and need to capture some context.
+In this case, you can create a closure and convert it to a delegate, which will be cached for subsequent conversions,
+making it essentially allocation free.
 
 | Method                 |     Mean |     Error |    StdDev | Allocated |
 |------------------------|---------:|----------:|----------:|----------:|
@@ -321,14 +324,15 @@ Making it allocation free after the first time it is converted.
 
 ## Cache Management
 
-The `ClosureManager` class provides a static method `ClearCache()` that clears all internal caches used by the Closures system. This can be useful for freeing up memory if you know that most cached values will no longer be needed. For example, in a video game, you might want to call `ClosureManager.ClearCache()` during a major loading screen or scene transition, when much of the code and its associated closures are about to change.
+The `ClosureManager` class provides a static method `ClearCache()` that clears all internal caches used by the Closures system.
+This can help reduce memory usage in scenarios where many closures, invokers and delegate conversions have been cached but are no longer relevant.
+For example, in a video game, you might want to call `ClosureManager.ClearCache()` during a major loading screen or scene transition, 
+when much of the code and its associated closures are about to change.
 
 ```csharp
 // Clear all closure-related caches to free up memory
 ClosureManager.ClearCache();
 ```
-
-This operation is safe and can help reduce memory usage in scenarios where many closures, invokers and delegate conversions have been cached but are no longer relevant.
 
 ## Closure Types
 Closures are categorized into several types based on their functionality and usage patterns. Below is a summary of the different closure types available in the Closures library:

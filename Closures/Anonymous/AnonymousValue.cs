@@ -110,10 +110,11 @@ public struct AnonymousValue : IEquatable<AnonymousValue> {
     
     /// <summary>
     /// Returns the value as the specified type <typeparamref name="T"/> if possible.
-    /// Throws <see cref="InvalidCastException"/> if the type does not match.
     /// </summary>
     /// <typeparam name="T">The type to cast to</typeparam>
     /// <returns>The value as type <typeparamref name="T"/></returns>
+    /// <exception cref="InvalidCastException">Thrown if the stored value does not match type <typeparamref name="T"/></exception>
+    /// <exception cref="NullReferenceException">Thrown if the value is null</exception>
     public T As<T>() {
         if (ValueType.IsOrReference<T>()) {
             return ValueType switch {
