@@ -215,12 +215,18 @@ AnonymousClosure anon = closure.AsAnonymous();
 You can invoke anonymous closures using their `Invoke` or `TryInvoke` methods. The `TryInvoke` methods return a `Result` or `Result<T>` indicating success or failure, and allow you to specify an `ExceptionHandlingPolicy` to control how exceptions are handled.
 
 ```csharp
-anonAction.Invoke(); // Invokes the action
-var result = anonFunc.TryInvoke(); // Returns Result<int>
+var result = anonFunc.TryInvoke<int>(ExceptionHandlingPoilicy.HandleExpected); // Returns Result<int>
 if (result.IsSuccess) {
     Console.WriteLine(result.Value);
 }
+else {
+    Console.WriteLine($"Exception during: {result.Exception}");
+}
 ```
+
+If invoking an anonymous closure as if it was a delegate type that it isn't, 
+it will throw unless you use the TryInvoke methods which will return a `Result` indicating success or failure.
+The result will also contain the exception if the invocation fails and return value if invoking a func successfully.
 
 #### Type Checking and Invocation
 
