@@ -104,6 +104,7 @@ public record struct MutatingClosureRefAction<TContext, TArg> : IClosureRefActio
     public void Invoke(ref TArg arg) => Delegate.Invoke(ref context, ref arg);
 }
 
+#if NET9_0_OR_GREATER
 /// <summary>
 /// Captures a reference to a variable context and an action delegate to be invoked with the context by reference,
 /// allowing mutation of the original context within the action.
@@ -178,3 +179,4 @@ public readonly ref struct RefClosureRefAction<TContext, TArg> : IClosureRefActi
     public void Invoke(ref TArg arg) => Delegate.Invoke(ref context, ref arg);
     public void Invoke(TArg arg) => Delegate.Invoke(ref context, ref arg);
 }
+#endif

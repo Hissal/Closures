@@ -1,4 +1,8 @@
-﻿using System.Runtime.CompilerServices;
+﻿#if UNITY_2022_2_OR_NEWER
+using Unity.Collections.LowLevel.Unsafe;
+#else
+using System.Runtime.CompilerServices;
+#endif
 using System.Runtime.InteropServices;
 
 namespace Closures.Anonymous;
@@ -72,7 +76,7 @@ public struct AnonymousValue : IEquatable<AnonymousValue> {
     [FieldOffset(16)] float floatValue;
     [FieldOffset(16)] double doubleValue;
     [FieldOffset(16)] decimal decimalValue;
-
+    
     /// <summary>
     /// Creates an AnonymousValue from a value of any type.
     /// The type must be a value type or a reference type that is not null.
@@ -81,6 +85,27 @@ public struct AnonymousValue : IEquatable<AnonymousValue> {
     /// <typeparam name="T">Type of the value</typeparam>
     /// <returns></returns>
     public static AnonymousValue From<T>(T value) where T : notnull {
+#if UNITY_2022_2_OR_NEWER
+        return typeof(T) switch {
+            { } t when t == typeof(char) => Char(UnsafeUtility.As<T, char>(ref value)),
+            { } t when t == typeof(bool) => Bool(UnsafeUtility.As<T, bool>(ref value)),
+
+            { } t when t == typeof(byte) => Byte(UnsafeUtility.As<T, byte>(ref value)),
+            { } t when t == typeof(sbyte) => SByte(UnsafeUtility.As<T, sbyte>(ref value)),
+            { } t when t == typeof(short) => Short(UnsafeUtility.As<T, short>(ref value)),
+            { } t when t == typeof(ushort) => UShort(UnsafeUtility.As<T, ushort>(ref value)),
+            { } t when t == typeof(int) => Int(UnsafeUtility.As<T, int>(ref value)),
+            { } t when t == typeof(uint) => UInt(UnsafeUtility.As<T, uint>(ref value)),
+            { } t when t == typeof(long) => Long(UnsafeUtility.As<T, long>(ref value)),
+            { } t when t == typeof(ulong) => ULong(UnsafeUtility.As<T, ulong>(ref value)),
+
+            { } t when t == typeof(float) => Float(UnsafeUtility.As<T, float>(ref value)),
+            { } t when t == typeof(double) => Double(UnsafeUtility.As<T, double>(ref value)),
+            { } t when t == typeof(decimal) => Decimal(UnsafeUtility.As<T, decimal>(ref value)),
+
+            _ => Unknown(value)
+        };
+#else
         return typeof(T) switch {
             { } t when t == typeof(char) => Char(Unsafe.As<T, char>(ref value)),
             { } t when t == typeof(bool) => Bool(Unsafe.As<T, bool>(ref value)),
@@ -100,6 +125,7 @@ public struct AnonymousValue : IEquatable<AnonymousValue> {
 
             _ => Unknown(value)
         };
+#endif
     }
     
     /// <summary>
@@ -116,6 +142,35 @@ public struct AnonymousValue : IEquatable<AnonymousValue> {
     /// <exception cref="InvalidCastException">Thrown if the stored value does not match type <typeparamref name="T"/></exception>
     /// <exception cref="NullReferenceException">Thrown if the value is null</exception>
     public T As<T>() {
+#if UNITY_2022_2_OR_NEWER
+        if (ValueType.IsOrReference<T>()) {
+            return ValueType switch {
+                ValueType.Char => UnsafeUtility.As<char, T>(ref charValue),
+                ValueType.Bool => UnsafeUtility.As<bool, T>(ref boolValue),
+
+                ValueType.Byte => UnsafeUtility.As<byte, T>(ref byteValue),
+                ValueType.SByte => UnsafeUtility.As<sbyte, T>(ref sbyteValue),
+                ValueType.Short => UnsafeUtility.As<short, T>(ref shortValue),
+                ValueType.UShort => UnsafeUtility.As<ushort, T>(ref ushortValue),
+                ValueType.Int => UnsafeUtility.As<int, T>(ref intValue),
+                ValueType.UInt => UnsafeUtility.As<uint, T>(ref uintValue),
+                ValueType.Long => UnsafeUtility.As<long, T>(ref longValue),
+
+                ValueType.ULong => UnsafeUtility.As<ulong, T>(ref ulongValue),
+
+                ValueType.Float => UnsafeUtility.As<float, T>(ref floatValue),
+                ValueType.Double => UnsafeUtility.As<double, T>(ref doubleValue),
+                ValueType.Decimal => UnsafeUtility.As<decimal, T>(ref decimalValue),
+
+                ValueType.Reference => unknownValue switch {
+                    T t => t,
+                    null => throw new NullReferenceException("AnonymousValue is null."),
+                    _ => InvalidCast()
+                },
+                _ => InvalidCast()
+            };
+        }
+#else
         if (ValueType.IsOrReference<T>()) {
             return ValueType switch {
                 ValueType.Char => Unsafe.As<char, T>(ref charValue),
@@ -143,6 +198,7 @@ public struct AnonymousValue : IEquatable<AnonymousValue> {
                 _ => InvalidCast()
             };
         }
+#endif
 
         return InvalidCast();
 

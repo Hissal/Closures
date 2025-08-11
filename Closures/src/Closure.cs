@@ -114,7 +114,8 @@ public struct MutatingClosure {
     public static MutatingClosureRefFunc<TContext, TArg, TResult> RefFunc<TContext, TArg, TResult>(TContext context, RefFunc<TContext, TArg, TResult> func) =>
         ClosureFactory.Create<TContext, RefFunc<TContext, TArg, TResult>, MutatingClosureRefFunc<TContext, TArg, TResult>>(context, func);
 }
-    
+
+#if NET9_0_OR_GREATER
 /// <summary>
 /// Provides factory methods for creating ref closure structs that encapsulate a context by reference and delegate logic,
 /// </summary>
@@ -144,6 +145,7 @@ public struct RefClosure {
     public static RefClosureRefFunc<TContext, TArg, TResult> RefFunc<TContext, TArg, TResult>(ref TContext context, RefFunc<TContext, TArg, TResult> func) =>
         new RefClosureRefFunc<TContext, TArg, TResult>(ref context, func);
 }
+#endif
     
 public static class ClosureManager {
     public static event Action? OnCacheClear;
