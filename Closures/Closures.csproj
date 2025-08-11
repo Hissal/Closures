@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <Company>Lassi Harjaluoma</Company>
@@ -9,7 +8,7 @@
         <Version>1.0.0</Version>
         <Title>Closures</Title>
         <Authors>Lassi Harjaluoma</Authors>
-        <Description>Closure structs that capture a context and a delegate that is invoked with the given context.</Description>
+        <Description>Closure structs that capture state without heap allocations.</Description>
         <Copyright>Copyright (c) Lassi Harjaluoma 2025.</Copyright>
         <PackageProjectUrl>https://github.com/Hissal/Closures</PackageProjectUrl>
         <RepositoryUrl>https://github.com/Hissal/Closures</RepositoryUrl>
@@ -17,21 +16,32 @@
         <PackageTags>Closure Capture Closures Delegate Event Action Func Function</PackageTags>
 
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
 
         <PackageIcon>Logo_128x128.png</PackageIcon>
 
-        <PackageReleaseNotes></PackageReleaseNotes>
+        <PackageReleaseNotes>- Conversions to delegates
+- AnonymousClosures (type-erased closures)
+
+- Old AnonymousClosure changed now to CustomClosure
+- Removed Add and Remove methods from all closures.
+- Made all closures records and readonly where applicable.
+- Mutating closures no longer have a MutatingBehaviour.</PackageReleaseNotes>
 
         <LangVersion>latestmajor</LangVersion>
 
         <Product>Closures</Product>
+
+        <TargetFramework>net9.0</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
-      <None Update="Logo_128x128.png">
-        <Pack>True</Pack>
-        <PackagePath>Logo_128x128.png</PackagePath>
-      </None>
+        <None Update="Logo_128x128.png">
+            <Pack>True</Pack>
+            <PackagePath>Logo_128x128.png</PackagePath>
+        </None>
+
+        <None Include="..\README.md" Pack="true" PackagePath="README.md" />
     </ItemGroup>
     
 </Project>
