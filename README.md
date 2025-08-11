@@ -22,10 +22,7 @@ Or by using the .NET CLI:
 dotnet add package Closures
 ```
 
-Performance benchmarks of the code from the Why? section using closure structs vs capturing variables
-in a lambda expression shows significant improvements in execution time and memory allocation.
-
-### Benchmark Results
+## Benchmark Results
 
 | Method        |      Mean |     Error |    StdDev | Allocated |
 |---------------|----------:|----------:|----------:|----------:|
@@ -41,7 +38,7 @@ while the closure struct captures the context by value and does not require heap
 On top of this since the lambda is capturing the variable it has to allocate a new delegate instance every time it is created
 while the closure struct allows for a stateless delegates making it a static method behind the scenes.
 
-### Table of Contents
+## Table of Contents
 - [Basic Closures](#basic-closures)
 - [Mutating Closures](#mutating-closures)
 - [Ref Closures](#ref-closures)
@@ -50,6 +47,11 @@ while the closure struct allows for a stateless delegates making it a static met
 - [Converting to Delegates](#converting-to-delegates)
 - [Cache Management](#cache-management)
 - [Closure Types](#closure-types)
+- [Example Scenarios](#example-scenarios)
+
+Closures Explained: [Closures | In 210 Seconds](https://youtu.be/jHd0FczIjAE?si=5slaULcQxYZN3EES)
+<br>
+Video demonstration of a similar concept: [Fix Closure Issues in 10 Minutes and Boost Performance](https://youtu.be/xiz24OqwEVI?si=gUapklV8JF0FaLTm)
 
 ## Usage
 To use the closures, simply create an instance of the desired closure type using the `Closure.Action` or `Closure.Func` methods, 
@@ -390,9 +392,15 @@ Closures are categorized into several types based on their functionality and usa
 ### Custom Closure
 - `CustomClosure<TContext, TDelegate>`: Represents a custom closure that can be used with any delegate type, allowing you to define your own delegate and use it with the closure.
 
-## Why?
-Due to the nature of closures,
-the context is captured as reference.
+## Example scenarios
+
+### Unexpected value captured by closure
+
+When creating delegates that capture values, it's important to understand how variable capture works in C#.
+When you create a delegate that uses a variable from the outside scope, it boxes it and values get turned to references.
+This not only means that it will create a heap allocation for the captured variable,
+but also that the variable is captured by reference, not by value. 
+If you create an action inside a loop like below it may lead to unexpected behaviour.
 
 The following code might not work as expected:
 ```csharp
@@ -426,13 +434,11 @@ foreach (var action in actions) {
     action.Invoke(); // Output: 0, 1, 2
 }
 ```
-You would see the output as `0, 1, 2` Though this works, it allows `tempI` to be captured by the lambda escaping its scope,
-creating a closure allocation capture that is allocated on the heap.
+You would see the output as `0, 1, 2` Though this works, it still allows `tempI` to be captured by the lambda escaping its scope,
+creating a heap allocation.
 
-To avoid this overhead, you can use `Closure` structs:
+To avoid this, you can use `Closure` structs:
 ```csharp
-using Closures;
-
 List<ClosureAction<int>> actions = new List<ClosureAction<int>>();
 
 for (int i = 0; i < 3; i++) {
@@ -446,12 +452,40 @@ foreach (var action in actions) {
 }
 ```
 This way, you avoid unnecessary heap allocations when capturing variables,
-which in turn reduces garbage collection overhead.
+which in turn reduces garbage collection.
+
 This is especially beneficial in performance-critical scenarios, such as game development,
 where minimizing allocations and maximizing efficiency is crucial.
 
-Closures Explained: [Closures | In 210 Seconds](https://youtu.be/jHd0FczIjAE?si=5slaULcQxYZN3EES)<br>
-Video demonstration of a similar concept: [Fix Closure Issues in 10 Minutes and Boost Performance](https://youtu.be/xiz24OqwEVI?si=gUapklV8JF0FaLTm)
+### Callback with context
+In scenarios where you need to pass a callback to a method that requires a context, closures can be particularly useful.
+You can create a closure that captures the context and then convert it to a delegate to pass it to the method. 
+This allows you to avoid heap allocations and maintain stable performance without gc spikes.
+
+```csharp
+public class Bullet {
+    public void Fire(Vector3 direction, Action<int> onHit) {
+        // Simulate a hit and invoke the callback with the hit damage
+        int damage = 10; // Example damage value
+        onHit.Invoke(damage);
+    }
+}
+
+public class Gun {
+    int totalDamageDealt;
+
+    public void Fire(Bullet bullet) {
+        // Capture this as context and add the damage to the total
+        bullet.Fire(
+            transform.forward, 
+            Closure.Action(this, (Gun gun, int damage) => gun.totalDamageDealt += damage).AsAction<int>()
+        );
+    }
+}
+```
+
+This way, you can pass the closure as a delegate to the `Fire` method of the `Bullet` class,
+capturing the context of the `Gun` instance allowing for modification of its state without unnecessary heap allocations.
 
 ## License
 This project is licensed under the MIT License.
