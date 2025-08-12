@@ -22,6 +22,8 @@ Or by using the .NET CLI:
 dotnet add package Closures
 ```
 
+For unity refer to the [Unity](#unity) section.
+
 ## Benchmark Results
 
 | Method        |      Mean |     Error |    StdDev | Allocated |
@@ -48,6 +50,7 @@ while the closure struct allows for a stateless delegates making it a static met
 - [Cache Management](#cache-management)
 - [Closure Types](#closure-types)
 - [Example Scenarios](#example-scenarios)
+- [Unity](#unity)
 
 Closures Explained: [Closures | In 210 Seconds](https://youtu.be/jHd0FczIjAE?si=5slaULcQxYZN3EES)
 <br>
@@ -321,7 +324,7 @@ However, there is a performance overhead when converting closures to delegates, 
 This is only done once for each closure and then the "invoker" delegate is cached for subsequent invocations.
 This means that doing this only once is not better than creating a normal action that captures the context.
 
-Where can be useful is for example when you want to pass a callback to a method that expects a delegate and need to capture some context.
+Where this can be useful is for example when you want to pass a callback to a method that expects a delegate and need to capture some context.
 In this case, you can create a closure and convert it to a delegate, which will be cached for subsequent conversions,
 making it essentially allocation free.
 
@@ -334,6 +337,7 @@ making it essentially allocation free.
 
 The `ClosureManager` class provides a static method `ClearCache()` that clears all internal caches used by the Closures system.
 This can help reduce memory usage in scenarios where many closures, invokers and delegate conversions have been cached but are no longer relevant.
+
 For example, in a video game, you might want to call `ClosureManager.ClearCache()` during a major loading screen or scene transition, 
 when much of the code and its associated closures are about to change.
 
@@ -343,7 +347,8 @@ ClosureManager.ClearCache();
 ```
 
 ## Closure Types
-Closures are categorized into several types based on their functionality and usage patterns. Below is a summary of the different closure types available in the Closures library:
+Closures are categorized into several types based on their functionality and usage patterns. 
+Below is a summary of the different closure types:
 
 ### Action Closures
 - `ClosureAction<TContext>`: Captures a context of type `TContext` and invokes an action with that context.
@@ -492,6 +497,16 @@ public class Gun {
 
 This way, you can pass the closure as a delegate to the `Fire` method of the `Bullet` class,
 capturing the context of the `Gun` instance allowing for modification of its state without unnecessary heap allocations.
+
+## Unity
+Requires Unity 2022.2 or later. 
+
+Ref closures are not supported in Unity.
+
+Install via git url:
+```bash
+https://github.com/Hissal/Closures.git?path=Closures.Unity/Assets/Closures
+```
 
 ## License
 This project is licensed under the MIT License.
