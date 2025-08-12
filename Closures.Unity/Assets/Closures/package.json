@@ -1,0 +1,12 @@
+﻿{
+  "name": "com.hissal.closures",
+  "displayName": "Closures",
+  "author": { "name": "Hissal", "url": "https://github.com/Hissal" },
+  "version": "1.0.0",
+  "unity": "2022.2",
+  "description": "Closure structs that capture state without heap allocations",
+  "keywords": [ "closure", "capture", "state", "delegate" ],
+  "license": "MIT",
+  "category": "Scripting",
+  "dependencies": {}
+}
